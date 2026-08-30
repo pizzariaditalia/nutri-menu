@@ -59,14 +59,12 @@
         </div>
     </section>
 
-    <!-- MUDANÇA: MURAL DE AVALIAÇÕES -->
     <section class="reviews-section">
         <div class="reviews-header">
             <h2>A galera tá amando! ❤️</h2>
             <button class="btn-review-add" onclick="abrirModalAvaliacao()"><i class="fa-solid fa-star"></i> Avaliar</button>
         </div>
         <div class="reviews-carousel" id="reviews-carousel">
-            <!-- As avaliações aprovadas entrarão aqui via JS -->
             <p style="font-size: 13px; color: var(--text-muted); padding: 0 20px;">Seja o primeiro a deixar uma foto e avaliação do seu pedido!</p>
         </div>
     </section>
@@ -124,7 +122,7 @@
                     <input type="text" id="cliente-nome" placeholder="Digite seu nome" required class="checkout-input">
                     
                     <h3 style="font-size: 16px; margin: 20px 0 15px; color: var(--text-dark);">Como deseja receber?</h3>
-                    <select id="tipo-entrega" class="checkout-input" onchange="toggleEndereco()">
+                    <select id="tipo-entrega" class="checkout-input" onchange="verificarRegrasCheckout()">
                         <option value="Retirada">Retirar na Loja</option>
                         <option value="Delivery" id="opt-delivery" style="display:none;">Entrega (Delivery)</option>
                     </select>
@@ -142,13 +140,22 @@
                     </div>
 
                     <h3 style="font-size: 16px; margin: 20px 0 15px; color: var(--text-dark);">Forma de Pagamento</h3>
-                    <select id="forma-pagamento" class="checkout-input">
+                    <select id="forma-pagamento" class="checkout-input" onchange="verificarRegrasCheckout()">
                         <option value="">Selecione uma opção...</option>
-                        <option value="pix">Pix (Chave com entregador/caixa)</option>
+                        <option value="pix" id="opt-pgto-pix">Pix</option>
                         <option value="cartao-credito">Cartão de Crédito</option>
                         <option value="cartao-debito">Cartão de Débito</option>
                         <option value="dinheiro">Dinheiro</option>
                     </select>
+
+                    <!-- MUDANÇA: CAIXA DA CHAVE PIX ANTECIPADA -->
+                    <div id="box-pix-antecipado" style="display: none; margin-top: 15px; padding: 15px; background: #E8F5E9; border-radius: 8px; border: 1px solid #4CAF50; text-align: center;">
+                        <p style="font-size: 13px; color: var(--text-dark); margin-bottom: 8px;">Para agilizar sua entrega, realize o pagamento via Pix agora:</p>
+                        <strong id="chave-pix-texto" style="font-size: 16px; color: var(--primary-green); display: block; margin-bottom: 10px;">carregando...</strong>
+                        <button onclick="copiarPix()" style="background: var(--primary-green); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-size: 12px; cursor: pointer; margin-bottom: 10px;"><i class="fa-regular fa-copy"></i> Copiar Chave</button>
+                        <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">*Você deverá enviar o comprovante no WhatsApp ao confirmar o pedido.</p>
+                    </div>
+
                 </div>
             </div>
             <div class="modal-footer" style="flex-direction: column; align-items: stretch; gap: 10px;">
@@ -170,22 +177,20 @@
         <div class="custom-alert-box" style="max-width: 350px;">
             <div style="font-size: 45px; color: #25D366; margin-bottom: 10px;"><i class="fa-brands fa-whatsapp"></i></div>
             <h2 style="font-size: 20px; color: var(--text-dark); margin-bottom: 8px;">Pedido Concluído!</h2>
-            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">Seu pedido já está na nossa cozinha! Para agilizar o atendimento, clique abaixo e nos envie a confirmação no WhatsApp.</p>
+            <p id="whatsapp-instrucao" style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">Seu pedido já está na nossa cozinha! Para agilizar o atendimento, clique abaixo e nos envie a confirmação no WhatsApp.</p>
             <button class="btn-add" id="btn-enviar-whatsapp" style="width: 100%; padding: 14px; background-color: #25D366; font-size: 15px; border-radius: 12px; display: flex; justify-content: center; align-items: center; gap: 10px;"><i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> Enviar via WhatsApp</button>
             <button onclick="fecharLimparTudo()" style="background: transparent; border: none; color: var(--text-muted); font-size: 13px; margin-top: 15px; cursor: pointer; text-decoration: underline;">Fechar</button>
         </div>
     </div>
 
-    <!-- MUDANÇA: MODAL DE NOVA AVALIAÇÃO -->
+    <!-- MODAL DE NOVA AVALIAÇÃO -->
     <div class="modal-overlay" id="avaliacao-modal">
         <div class="modal-content" style="max-height: 85vh;">
             <button class="close-modal" onclick="fecharModalAvaliacao()"><i class="fa-solid fa-xmark"></i></button>
             <div class="modal-body">
                 <h2 class="modal-title">Sua Experiência</h2>
                 <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Mostre pra todo mundo como o seu pedido chegou e o que achou!</p>
-                
                 <input type="text" id="aval-nome" class="checkout-input" placeholder="Seu Nome" style="margin-bottom: 15px;">
-                
                 <div style="text-align: center; margin-bottom: 15px;">
                     <label style="font-size: 13px; color: var(--text-dark); display: block; margin-bottom: 5px; font-weight: bold;">Sua Nota</label>
                     <select id="aval-nota" class="checkout-input" style="text-align: center; font-size: 18px; font-weight: bold; color: var(--accent-gold);">
@@ -196,9 +201,7 @@
                         <option value="1">⭐ Ruim</option>
                     </select>
                 </div>
-
                 <textarea id="aval-texto" class="checkout-input" placeholder="Escreva sobre o sabor, entrega, embalagem..." rows="3" style="margin-bottom: 15px;"></textarea>
-
                 <div style="background: #f8f8f8; border-radius: 8px; padding: 15px; border: 1px dashed #ccc; text-align: center;">
                     <label style="font-size: 13px; color: var(--text-dark); display: block; margin-bottom: 10px; font-weight: bold;">Foto do Pedido (Opcional)</label>
                     <input type="file" id="aval-img-file" accept="image/*" style="width: 100%; margin-bottom: 10px;">
@@ -206,9 +209,7 @@
                     <input type="hidden" id="aval-img-base64">
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-add-to-cart" id="btn-enviar-avaliacao" onclick="enviarAvaliacao()" style="justify-content: center;">Enviar Avaliação</button>
-            </div>
+            <div class="modal-footer"><button class="btn-add-to-cart" id="btn-enviar-avaliacao" onclick="enviarAvaliacao()" style="justify-content: center;">Enviar Avaliação</button></div>
         </div>
     </div>
 
@@ -220,6 +221,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>
