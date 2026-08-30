@@ -26,8 +26,7 @@ if (hoursToggle) {
 let lojaAberta = true; 
 let configDelivery = { habilitado: false };
 let taxasDisponiveis = []; let promocoesDisponiveis = []; let cupomAtivo = null; 
-let lojaTelefone = ''; 
-let chavePixLoja = ''; // Nova variável
+let lojaTelefone = ''; let chavePixLoja = ''; 
 
 let unsubscribePedido = null;
 window.fecharStatusWidget = function() { document.getElementById('order-status-widget').style.display = 'none'; }
@@ -53,23 +52,15 @@ onSnapshot(doc(db, "loja", "configuracoes"), (docSnap) => {
     if (docSnap.exists()) {
         const config = docSnap.data();
         lojaAberta = config.status_loja !== false; configDelivery.habilitado = (config.delivery_status === true); configDelivery.taxa = parseFloat(config.delivery_fee) || 0;
-        
-        // Pega a chave PIX salva
-        chavePixLoja = config.chave_pix || "";
-        document.getElementById('chave-pix-texto').innerText = chavePixLoja;
-
+        chavePixLoja = config.chave_pix || ""; document.getElementById('chave-pix-texto').innerText = chavePixLoja;
         const optDelivery = document.getElementById('opt-delivery'); const deliveryInfoText = document.getElementById('store-delivery-info');
         if (configDelivery.habilitado) { optDelivery.style.display = 'block'; let tempoStr = config.delivery_time ? config.delivery_time : "Disponível"; deliveryInfoText.innerHTML = `${tempoStr} <span style="font-size:10px; display:block; color:var(--primary-green)">A partir do bairro</span>`; } 
         else { optDelivery.style.display = 'none'; document.getElementById('tipo-entrega').value = 'Retirada'; verificarRegrasCheckout(); deliveryInfoText.innerText = "Indisponível"; }
-        
         if(config.nome_loja) document.getElementById('store-brand-title').innerText = config.nome_loja; if(config.frase_efeito) document.getElementById('store-quote').innerText = `"${config.frase_efeito}"`; if(config.endereco) document.getElementById('store-address').innerText = config.endereco;
-        
         const linkZap = document.getElementById('link-whatsapp');
         if(config.telefone && config.telefone.trim() !== '') { lojaTelefone = config.telefone.replace(/\D/g,''); linkZap.href = `https://wa.me/55${lojaTelefone}`; linkZap.style.display = 'flex'; } else { lojaTelefone = ''; linkZap.style.display = 'none'; }
-        
         const linkInsta = document.getElementById('link-instagram'); if(config.instagram && config.instagram.trim() !== '') { linkInsta.href = config.instagram; linkInsta.style.display = 'flex'; } else { linkInsta.style.display = 'none'; }
         const linkFace = document.getElementById('link-facebook'); if(config.facebook && config.facebook.trim() !== '') { linkFace.href = config.facebook; linkFace.style.display = 'flex'; } else { linkFace.style.display = 'none'; }
-        
         if(config.hr_semana) document.getElementById('hours-weekday').innerText = config.hr_semana; if(config.hr_sabado) document.getElementById('hours-saturday').innerText = config.hr_sabado; if(config.hr_domingo) document.getElementById('hours-sunday').innerText = config.hr_domingo;
         const bannerFechado = document.getElementById('loja-fechada-banner'); if (!lojaAberta) { bannerFechado.style.display = 'block'; } else { bannerFechado.style.display = 'none'; }
     }
@@ -120,17 +111,40 @@ inputBusca.addEventListener('input', (evento) => {
     renderizarCardapio(cardapioFiltrado);
 });
 
-// AVALIAÇÕES MURAL
+
+// ==========================================
+// MUDANÇA: CÁLCULO DA MÉDIA REAL E NOTAS
+// ==========================================
 const avalCarousel = document.getElementById('reviews-carousel');
+const storeRating = document.getElementById('store-rating'); 
+
 onSnapshot(collection(db, "avaliacoes"), (snapshot) => {
-    let htmlAvals = ''; let temAvaliacao = false;
+    let htmlAvals = ''; 
+    let temAvaliacao = false;
+    let somaNotas = 0; 
+    let totalAprovadas = 0; 
+
     snapshot.forEach(docSnap => {
         const aval = docSnap.data();
         if (aval.status === 'aprovado') {
-            temAvaliacao = true; let estrelasHtml = '⭐'.repeat(aval.nota); let imgHtml = aval.imagem ? `<img src="${aval.imagem}" class="review-img">` : '';
+            temAvaliacao = true; 
+            somaNotas += aval.nota; 
+            totalAprovadas++; 
+            
+            let estrelasHtml = '⭐'.repeat(aval.nota); 
+            let imgHtml = aval.imagem ? `<img src="${aval.imagem}" class="review-img">` : '';
             htmlAvals += `<div class="review-card"><div class="review-top"><span class="review-name"><i class="fa-solid fa-user-circle" style="color:var(--primary-green); margin-right:5px;"></i>${aval.nome}</span><span class="review-stars">${estrelasHtml}</span></div><p class="review-text">"${aval.comentario}"</p>${imgHtml}</div>`;
         }
     });
+
+    if (totalAprovadas > 0) {
+        const media = (somaNotas / totalAprovadas).toFixed(1);
+        storeRating.innerHTML = `<i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> ${media} (${totalAprovadas} Avaliações)`;
+        storeRating.style.display = 'block';
+    } else {
+        storeRating.style.display = 'none';
+    }
+
     if (temAvaliacao) avalCarousel.innerHTML = htmlAvals; 
     else avalCarousel.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); padding: 0 20px;">Seja o primeiro a deixar uma foto e avaliação do seu pedido!</p>';
 });
@@ -215,49 +229,19 @@ window.aplicarCupom = function() {
     cupomAtivo = cupom; msg.innerText = "Cupom aplicado com sucesso!"; msg.style.color = "var(--color-ready)"; msg.style.display = "block"; renderizarItensCarrinho();
 }
 
-// MUDANÇA MÁGICA DO PIX AQUI
 window.verificarRegrasCheckout = function() {
-    const tipo = document.getElementById('tipo-entrega').value; 
-    const boxEnd = document.getElementById('box-endereco'); 
-    const lblTaxa = document.getElementById('label-taxa');
-    const pgto = document.getElementById('forma-pagamento').value;
-    const boxPix = document.getElementById('box-pix-antecipado');
-    const optPix = document.getElementById('opt-pgto-pix');
-    
-    // Regra 1: Mostrar ou Esconder Endereço
-    if (tipo === 'Delivery') { 
-        boxEnd.style.display = 'block'; 
-        lblTaxa.style.display = 'inline'; 
-        optPix.innerText = "Pix (Pagar agora)";
-    } else { 
-        boxEnd.style.display = 'none'; 
-        lblTaxa.style.display = 'none'; 
-        optPix.innerText = "Pix (Na retirada)";
-    }
-
-    // Regra 2: Mostrar a chave PIX se for Delivery E Pagamento via Pix
-    if (tipo === 'Delivery' && pgto === 'pix') {
-        boxPix.style.display = 'block';
-    } else {
-        boxPix.style.display = 'none';
-    }
-
+    const tipo = document.getElementById('tipo-entrega').value; const boxEnd = document.getElementById('box-endereco'); const lblTaxa = document.getElementById('label-taxa'); const pgto = document.getElementById('forma-pagamento').value; const boxPix = document.getElementById('box-pix-antecipado'); const optPix = document.getElementById('opt-pgto-pix');
+    if (tipo === 'Delivery') { boxEnd.style.display = 'block'; lblTaxa.style.display = 'inline'; optPix.innerText = "Pix (Pagar agora)"; } else { boxEnd.style.display = 'none'; lblTaxa.style.display = 'none'; optPix.innerText = "Pix (Na retirada)"; }
+    if (tipo === 'Delivery' && pgto === 'pix') { boxPix.style.display = 'block'; } else { boxPix.style.display = 'none'; }
     if (carrinho.length > 0) renderizarItensCarrinho();
 }
-window.toggleEndereco = window.verificarRegrasCheckout; // Para manter compatibilidade com o HTML antigo
+window.toggleEndereco = window.verificarRegrasCheckout; 
 
-window.copiarPix = function() {
-    navigator.clipboard.writeText(chavePixLoja).then(() => {
-        mostrarAlerta("Chave PIX copiada para a área de transferência!");
-    });
-}
+window.copiarPix = function() { navigator.clipboard.writeText(chavePixLoja).then(() => { mostrarAlerta("Chave PIX copiada para a área de transferência!"); }); }
 
 document.querySelector('.btn-view-cart').addEventListener('click', () => {
     if (carrinho.length === 0) return mostrarAlerta("Seu carrinho está vazio!");
-    verificarRegrasCheckout(); // Garante que a tela abra certinha
-    renderizarItensCarrinho(); 
-    document.body.style.overflow = 'hidden'; 
-    cartModal.classList.add('active');
+    verificarRegrasCheckout(); renderizarItensCarrinho(); document.body.style.overflow = 'hidden'; cartModal.classList.add('active');
 });
 
 btnCloseCart.addEventListener('click', () => { cartModal.classList.remove('active'); document.body.style.overflow = ''; });
@@ -268,9 +252,7 @@ window.renderizarItensCarrinho = function() {
         valorTotalItens += item.total; let obsHtml = item.observacao ? `<p>Obs: ${item.observacao}</p>` : '';
         cartItemsContainer.innerHTML += `<div class="cart-item-row"><div class="cart-item-info"><h4>${item.quantidade}x ${item.nome}</h4>${obsHtml}<button class="btn-remove-item" onclick="removerDoCarrinho(${index})">Remover</button></div><div class="cart-item-price">${formatarMoeda(item.total)}</div></div>`;
     });
-
     document.getElementById('checkout-subtotal').innerText = formatarMoeda(valorTotalItens);
-
     let descontoCalc = 0;
     if (cupomAtivo) {
         if(cupomAtivo.tipo === 'porcentagem') descontoCalc = valorTotalItens * (cupomAtivo.valor / 100); else descontoCalc = cupomAtivo.valor;
@@ -283,7 +265,6 @@ window.renderizarItensCarrinho = function() {
         const idBairro = document.getElementById('end-bairro').value; const bairroObj = taxasDisponiveis.find(t => t.id === idBairro); if(bairroObj) taxa = bairroObj.valor;
     }
     document.getElementById('checkout-taxa').innerText = formatarMoeda(taxa);
-
     const totalFinal = (valorTotalItens - descontoCalc) + taxa; checkoutTotal.innerText = formatarMoeda(totalFinal);
 }
 
@@ -293,9 +274,7 @@ window.removerDoCarrinho = function(index) {
 }
 
 window.fecharLimparTudo = function() {
-    carrinho = []; cupomAtivo = null; 
-    document.getElementById('msg-cupom').style.display = 'none'; document.getElementById('input-cupom').value = '';
-    atualizarBarraCarrinho(); document.getElementById('whatsapp-modal').classList.remove('active'); document.body.style.overflow = '';
+    carrinho = []; cupomAtivo = null; document.getElementById('msg-cupom').style.display = 'none'; document.getElementById('input-cupom').value = ''; atualizarBarraCarrinho(); document.getElementById('whatsapp-modal').classList.remove('active'); document.body.style.overflow = '';
     document.getElementById('cliente-nome').value = ''; document.getElementById('end-bairro').value = ''; document.getElementById('end-rua').value = ''; document.getElementById('end-numero').value = ''; document.getElementById('end-comp').value = '';
 }
 
@@ -321,16 +300,13 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
     const totalFinalCalculado = (valorTotalItens - descontoCobrado) + taxaCobrada;
 
     const pedidoFinal = { 
-        cliente: nome, pagamento: pagamentoTexto, tipo_entrega: tipoEntrega, endereco_entrega: enderecoFinal, taxa_entrega: taxaCobrada, 
-        cupom_aplicado: cupomNome, valor_desconto: descontoCobrado, itens: carrinho, total_pedido: totalFinalCalculado, data_hora: new Date().toISOString(), status: "novo" 
+        cliente: nome, pagamento: pagamentoTexto, tipo_entrega: tipoEntrega, endereco_entrega: enderecoFinal, taxa_entrega: taxaCobrada, cupom_aplicado: cupomNome, valor_desconto: descontoCobrado, itens: carrinho, total_pedido: totalFinalCalculado, data_hora: new Date().toISOString(), status: "novo" 
     };
 
     const btnFinalizar = document.getElementById('btn-finalizar-pedido'); const textoOriginal = btnFinalizar.innerText; btnFinalizar.innerText = "Processando..."; btnFinalizar.disabled = true;
 
     try {
-        const docRef = await addDoc(collection(db, "pedidos"), pedidoFinal);
-        localStorage.setItem('meuPedidoNutriLife', docRef.id);
-        escutarStatusPedido(docRef.id);
+        const docRef = await addDoc(collection(db, "pedidos"), pedidoFinal); localStorage.setItem('meuPedidoNutriLife', docRef.id); escutarStatusPedido(docRef.id);
 
         let textoWhats = `*NOVO PEDIDO!* 🍔\n*Cliente:* ${nome}\n*Entrega:* ${tipoEntrega}\n`;
         if (tipoEntrega === 'Delivery') textoWhats += `*Endereço:* ${enderecoFinal}\n`;
@@ -341,13 +317,9 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
         if(taxaCobrada > 0) textoWhats += `*Taxa:* ${formatarMoeda(taxaCobrada)}\n`;
         textoWhats += `*Total:* ${formatarMoeda(totalFinalCalculado)}\n\n*Pagamento:* ${pagamentoTexto}`;
 
-        // MUDANÇA MÁGICA: Se for Pix + Delivery, adiciona recado no WhatsApp!
         if (tipoEntrega === 'Delivery' && pagamentoId === 'pix') {
-            textoWhats += `\n\n📌 _Segue o comprovante do PIX:_`;
-            document.getElementById('whatsapp-instrucao').innerText = "Seu pedido já está na nossa cozinha! Clique abaixo e nos envie a confirmação junto com o comprovante do PIX.";
-        } else {
-            document.getElementById('whatsapp-instrucao').innerText = "Seu pedido já está na nossa cozinha! Para agilizar o atendimento, clique abaixo e nos envie a confirmação no WhatsApp.";
-        }
+            textoWhats += `\n\n📌 _Segue o comprovante do PIX:_`; document.getElementById('whatsapp-instrucao').innerText = "Seu pedido já está na nossa cozinha! Clique abaixo e nos envie a confirmação junto com o comprovante do PIX.";
+        } else { document.getElementById('whatsapp-instrucao').innerText = "Seu pedido já está na nossa cozinha! Para agilizar o atendimento, clique abaixo e nos envie a confirmação no WhatsApp."; }
 
         const encodedText = encodeURIComponent(textoWhats); const waLink = `https://wa.me/55${lojaTelefone}?text=${encodedText}`;
         document.getElementById('btn-enviar-whatsapp').onclick = () => { window.open(waLink, '_blank'); fecharLimparTudo(); };
