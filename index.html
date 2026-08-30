@@ -36,7 +36,10 @@
             <a href="#" id="link-facebook" target="_blank" title="Facebook" style="display: none;"><i class="fa-brands fa-facebook-f"></i></a>
         </div>
 
-        <div class="rating"><i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> 5.0 (Avaliações)</div>
+        <!-- MUDANÇA: Agora com ID para calcular a média dinamicamente -->
+        <div class="rating" id="store-rating" style="display: none;">
+            <i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> 5.0 (0 Avaliações)
+        </div>
 
         <div class="delivery-info">
             <div class="info-item">
@@ -78,7 +81,6 @@
         <button class="btn-view-cart">Ver pedido</button>
     </div>
 
-    <!-- MODAL DE PRODUTO -->
     <div class="modal-overlay" id="product-modal">
         <div class="modal-content">
             <button class="close-modal" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -100,7 +102,6 @@
         </div>
     </div>
 
-    <!-- MODAL DO CARRINHO -->
     <div class="modal-overlay" id="cart-modal">
         <div class="modal-content" style="height: 90vh;">
             <button class="close-modal" id="close-cart-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -148,7 +149,6 @@
                         <option value="dinheiro">Dinheiro</option>
                     </select>
 
-                    <!-- MUDANÇA: CAIXA DA CHAVE PIX ANTECIPADA -->
                     <div id="box-pix-antecipado" style="display: none; margin-top: 15px; padding: 15px; background: #E8F5E9; border-radius: 8px; border: 1px solid #4CAF50; text-align: center;">
                         <p style="font-size: 13px; color: var(--text-dark); margin-bottom: 8px;">Para agilizar sua entrega, realize o pagamento via Pix agora:</p>
                         <strong id="chave-pix-texto" style="font-size: 16px; color: var(--primary-green); display: block; margin-bottom: 10px;">carregando...</strong>
@@ -172,7 +172,6 @@
         </div>
     </div>
 
-    <!-- MODAL WHATSAPP -->
     <div class="modal-overlay" id="whatsapp-modal" style="align-items: center; z-index: 2000;">
         <div class="custom-alert-box" style="max-width: 350px;">
             <div style="font-size: 45px; color: #25D366; margin-bottom: 10px;"><i class="fa-brands fa-whatsapp"></i></div>
@@ -183,7 +182,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE NOVA AVALIAÇÃO -->
     <div class="modal-overlay" id="avaliacao-modal">
         <div class="modal-content" style="max-height: 85vh;">
             <button class="close-modal" onclick="fecharModalAvaliacao()"><i class="fa-solid fa-xmark"></i></button>
@@ -213,7 +211,6 @@
         </div>
     </div>
 
-    <!-- Alerta comum -->
     <div class="modal-overlay" id="custom-alert" style="align-items: center; z-index: 2000;">
         <div class="custom-alert-box">
             <p id="custom-alert-message">Mensagem do alerta</p>
@@ -221,6 +218,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/app.js?v=5"></script>
+    <!-- MUDANÇA: Truque do Cache (v=6) -->
+    <script type="module" src="js/app.js?v=6"></script>
 </body>
 </html>
