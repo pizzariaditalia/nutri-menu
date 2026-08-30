@@ -111,42 +111,20 @@ inputBusca.addEventListener('input', (evento) => {
     renderizarCardapio(cardapioFiltrado);
 });
 
-
-// ==========================================
-// MUDANÇA: CÁLCULO DA MÉDIA REAL E NOTAS
-// ==========================================
-const avalCarousel = document.getElementById('reviews-carousel');
-const storeRating = document.getElementById('store-rating'); 
-
+const avalCarousel = document.getElementById('reviews-carousel'); const storeRating = document.getElementById('store-rating'); 
 onSnapshot(collection(db, "avaliacoes"), (snapshot) => {
-    let htmlAvals = ''; 
-    let temAvaliacao = false;
-    let somaNotas = 0; 
-    let totalAprovadas = 0; 
-
+    let htmlAvals = ''; let temAvaliacao = false; let somaNotas = 0; let totalAprovadas = 0; 
     snapshot.forEach(docSnap => {
         const aval = docSnap.data();
         if (aval.status === 'aprovado') {
-            temAvaliacao = true; 
-            somaNotas += aval.nota; 
-            totalAprovadas++; 
-            
-            let estrelasHtml = '⭐'.repeat(aval.nota); 
-            let imgHtml = aval.imagem ? `<img src="${aval.imagem}" class="review-img">` : '';
+            temAvaliacao = true; somaNotas += aval.nota; totalAprovadas++; 
+            let estrelasHtml = '⭐'.repeat(aval.nota); let imgHtml = aval.imagem ? `<img src="${aval.imagem}" class="review-img">` : '';
             htmlAvals += `<div class="review-card"><div class="review-top"><span class="review-name"><i class="fa-solid fa-user-circle" style="color:var(--primary-green); margin-right:5px;"></i>${aval.nome}</span><span class="review-stars">${estrelasHtml}</span></div><p class="review-text">"${aval.comentario}"</p>${imgHtml}</div>`;
         }
     });
-
-    if (totalAprovadas > 0) {
-        const media = (somaNotas / totalAprovadas).toFixed(1);
-        storeRating.innerHTML = `<i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> ${media} (${totalAprovadas} Avaliações)`;
-        storeRating.style.display = 'block';
-    } else {
-        storeRating.style.display = 'none';
-    }
-
-    if (temAvaliacao) avalCarousel.innerHTML = htmlAvals; 
-    else avalCarousel.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); padding: 0 20px;">Seja o primeiro a deixar uma foto e avaliação do seu pedido!</p>';
+    if (totalAprovadas > 0) { const media = (somaNotas / totalAprovadas).toFixed(1); storeRating.innerHTML = `<i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> ${media} (${totalAprovadas} Avaliações)`; storeRating.style.display = 'block'; } 
+    else { storeRating.style.display = 'none'; }
+    if (temAvaliacao) avalCarousel.innerHTML = htmlAvals; else avalCarousel.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); padding: 0 20px;">Seja o primeiro a deixar uma foto e avaliação do seu pedido!</p>';
 });
 
 const modalAvaliacao = document.getElementById('avaliacao-modal'); const fileInputAval = document.getElementById('aval-img-file'); const previewImgAval = document.getElementById('aval-img-preview');
@@ -229,9 +207,26 @@ window.aplicarCupom = function() {
     cupomAtivo = cupom; msg.innerText = "Cupom aplicado com sucesso!"; msg.style.color = "var(--color-ready)"; msg.style.display = "block"; renderizarItensCarrinho();
 }
 
+// ==========================================
+// MUDANÇA: LÓGICA DE EXIBIR O MODO "MESA"
+// ==========================================
 window.verificarRegrasCheckout = function() {
-    const tipo = document.getElementById('tipo-entrega').value; const boxEnd = document.getElementById('box-endereco'); const lblTaxa = document.getElementById('label-taxa'); const pgto = document.getElementById('forma-pagamento').value; const boxPix = document.getElementById('box-pix-antecipado'); const optPix = document.getElementById('opt-pgto-pix');
-    if (tipo === 'Delivery') { boxEnd.style.display = 'block'; lblTaxa.style.display = 'inline'; optPix.innerText = "Pix (Pagar agora)"; } else { boxEnd.style.display = 'none'; lblTaxa.style.display = 'none'; optPix.innerText = "Pix (Na retirada)"; }
+    const tipo = document.getElementById('tipo-entrega').value; 
+    const boxEnd = document.getElementById('box-endereco'); 
+    const lblTaxa = document.getElementById('label-taxa'); 
+    const pgto = document.getElementById('forma-pagamento').value; 
+    const boxPix = document.getElementById('box-pix-antecipado'); 
+    const optPix = document.getElementById('opt-pgto-pix');
+    const boxMesa = document.getElementById('box-mesa');
+
+    if (tipo === 'Delivery') { 
+        boxEnd.style.display = 'block'; boxMesa.style.display = 'none'; lblTaxa.style.display = 'inline'; optPix.innerText = "Pix (Pagar agora)"; 
+    } else if (tipo === 'Mesa') {
+        boxEnd.style.display = 'none'; boxMesa.style.display = 'block'; lblTaxa.style.display = 'none'; optPix.innerText = "Pix (Pagar na mesa)"; 
+    } else { 
+        boxEnd.style.display = 'none'; boxMesa.style.display = 'none'; lblTaxa.style.display = 'none'; optPix.innerText = "Pix (Na retirada)"; 
+    }
+    
     if (tipo === 'Delivery' && pgto === 'pix') { boxPix.style.display = 'block'; } else { boxPix.style.display = 'none'; }
     if (carrinho.length > 0) renderizarItensCarrinho();
 }
@@ -275,7 +270,7 @@ window.removerDoCarrinho = function(index) {
 
 window.fecharLimparTudo = function() {
     carrinho = []; cupomAtivo = null; document.getElementById('msg-cupom').style.display = 'none'; document.getElementById('input-cupom').value = ''; atualizarBarraCarrinho(); document.getElementById('whatsapp-modal').classList.remove('active'); document.body.style.overflow = '';
-    document.getElementById('cliente-nome').value = ''; document.getElementById('end-bairro').value = ''; document.getElementById('end-rua').value = ''; document.getElementById('end-numero').value = ''; document.getElementById('end-comp').value = '';
+    document.getElementById('cliente-nome').value = ''; document.getElementById('end-bairro').value = ''; document.getElementById('end-rua').value = ''; document.getElementById('end-numero').value = ''; document.getElementById('end-comp').value = ''; document.getElementById('num-mesa').value = '';
 }
 
 document.getElementById('btn-finalizar-pedido').addEventListener('click', async () => {
@@ -289,6 +284,10 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
         const idBairro = document.getElementById('end-bairro').value; const rua = document.getElementById('end-rua').value; const numero = document.getElementById('end-numero').value; const comp = document.getElementById('end-comp').value;
         if (!idBairro) return mostrarAlerta("Por favor, selecione o Bairro de entrega."); if (!rua || !numero) return mostrarAlerta("Por favor, preencha Rua e Número.");
         const bairroObj = taxasDisponiveis.find(t => t.id === idBairro); bairroNome = bairroObj.bairro; enderecoFinal = `${rua}, ${numero} - ${bairroNome}`; if(comp) enderecoFinal += ` (${comp})`; taxaCobrada = bairroObj.valor;
+    } else if (tipoEntrega === 'Mesa') {
+        const numMesa = document.getElementById('num-mesa').value;
+        if (!numMesa) return mostrarAlerta("Por favor, informe o número da sua mesa.");
+        enderecoFinal = `Mesa ${numMesa}`; taxaCobrada = 0;
     }
 
     const valorTotalItens = carrinho.reduce((soma, item) => soma + item.total, 0);
@@ -309,7 +308,7 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
         const docRef = await addDoc(collection(db, "pedidos"), pedidoFinal); localStorage.setItem('meuPedidoNutriLife', docRef.id); escutarStatusPedido(docRef.id);
 
         let textoWhats = `*NOVO PEDIDO!* 🍔\n*Cliente:* ${nome}\n*Entrega:* ${tipoEntrega}\n`;
-        if (tipoEntrega === 'Delivery') textoWhats += `*Endereço:* ${enderecoFinal}\n`;
+        if (tipoEntrega === 'Delivery' || tipoEntrega === 'Mesa') textoWhats += `*Local:* ${enderecoFinal}\n`;
         textoWhats += `\n*RESUMO:*\n`;
         carrinho.forEach(item => { textoWhats += `${item.quantidade}x ${item.nome} - ${formatarMoeda(item.total)}\n`; if(item.observacao) textoWhats += `   _Obs: ${item.observacao}_\n`; });
         textoWhats += `\n*Subtotal:* ${formatarMoeda(valorTotalItens)}\n`;
@@ -327,3 +326,25 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
         cartModal.classList.remove('active'); document.getElementById('whatsapp-modal').classList.add('active');
     } catch (erro) { mostrarAlerta("Ocorreu um erro ao enviar. Tente novamente."); } finally { btnFinalizar.innerText = textoOriginal; btnFinalizar.disabled = false; }
 });
+
+// ==========================================
+// MUDANÇA: A MÁGICA DO QR CODE DA MESA
+// ==========================================
+const urlParams = new URLSearchParams(window.location.search);
+const mesaParam = urlParams.get('mesa');
+if(mesaParam) {
+    // Se o cliente acessou pelo QR Code (ex: site.com/?mesa=05)
+    setTimeout(() => {
+        const selectEntrega = document.getElementById('tipo-entrega');
+        const inputMesa = document.getElementById('num-mesa');
+        
+        selectEntrega.value = 'Mesa';
+        inputMesa.value = mesaParam;
+        
+        // Trava para o cliente não mudar sem querer
+        selectEntrega.disabled = true;
+        inputMesa.disabled = true;
+        
+        verificarRegrasCheckout();
+    }, 1000); // Aguarda o HTML carregar
+}
