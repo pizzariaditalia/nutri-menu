@@ -25,128 +25,53 @@ if (hoursToggle) {
 
 let lojaAberta = true; 
 let configDelivery = { habilitado: false };
-let taxasDisponiveis = [];
-let promocoesDisponiveis = [];
-let cupomAtivo = null; 
-let lojaTelefone = ''; 
+let taxasDisponiveis = []; let promocoesDisponiveis = []; let cupomAtivo = null; let lojaTelefone = ''; 
 
-// ==========================================
-// MUDANÇA: LÓGICA DO BALÃO DE STATUS
-// ==========================================
 let unsubscribePedido = null;
-
-window.fecharStatusWidget = function() {
-    document.getElementById('order-status-widget').style.display = 'none';
-}
-
+window.fecharStatusWidget = function() { document.getElementById('order-status-widget').style.display = 'none'; }
 function escutarStatusPedido(idPedido) {
-    if(unsubscribePedido) unsubscribePedido(); // Limpa escuta anterior se tiver
-    
+    if(unsubscribePedido) unsubscribePedido();
     unsubscribePedido = onSnapshot(doc(db, "pedidos", idPedido), (docSnap) => {
         if (docSnap.exists()) {
             const pedido = docSnap.data();
-            const widget = document.getElementById('order-status-widget');
-            const icon = document.getElementById('order-status-icon');
-            const text = document.getElementById('order-status-text');
-
+            const widget = document.getElementById('order-status-widget'); const icon = document.getElementById('order-status-icon'); const text = document.getElementById('order-status-text');
             widget.style.display = 'flex';
-
-            if (pedido.status === 'novo') {
-                widget.style.borderLeftColor = 'var(--color-new)';
-                icon.innerHTML = '🕒';
-                text.innerText = 'Recebido (Aguardando)';
-            } else if (pedido.status === 'preparo') {
-                widget.style.borderLeftColor = 'var(--color-prep)';
-                icon.innerHTML = '🍳';
-                text.innerText = 'Em Preparo na Cozinha';
-            } else if (pedido.status === 'pronto') {
-                widget.style.borderLeftColor = 'var(--color-ready)';
-                icon.innerHTML = pedido.tipo_entrega === 'Delivery' ? '🛵' : '🛍️';
-                text.innerText = pedido.tipo_entrega === 'Delivery' ? 'Saiu para Entrega!' : 'Pronto para Retirada!';
-            } else if (pedido.status === 'arquivado') {
-                widget.style.borderLeftColor = 'var(--text-muted)';
-                icon.innerHTML = '✅';
-                text.innerText = 'Pedido Finalizado!';
-                
-                // Se foi arquivado, avisa e limpa a memória depois de 5 segundos
-                setTimeout(() => {
-                    widget.style.display = 'none';
-                    localStorage.removeItem('meuPedidoNutriLife');
-                }, 5000);
-            }
+            if (pedido.status === 'novo') { widget.style.borderLeftColor = 'var(--color-new)'; icon.innerHTML = '🕒'; text.innerText = 'Recebido (Aguardando)'; } 
+            else if (pedido.status === 'preparo') { widget.style.borderLeftColor = 'var(--color-prep)'; icon.innerHTML = '🍳'; text.innerText = 'Em Preparo na Cozinha'; } 
+            else if (pedido.status === 'pronto') { widget.style.borderLeftColor = 'var(--color-ready)'; icon.innerHTML = pedido.tipo_entrega === 'Delivery' ? '🛵' : '🛍️'; text.innerText = pedido.tipo_entrega === 'Delivery' ? 'Saiu para Entrega!' : 'Pronto para Retirada!'; } 
+            else if (pedido.status === 'arquivado') { widget.style.borderLeftColor = 'var(--text-muted)'; icon.innerHTML = '✅'; text.innerText = 'Pedido Finalizado!'; setTimeout(() => { widget.style.display = 'none'; localStorage.removeItem('meuPedidoNutriLife'); }, 5000); }
         }
     });
 }
 
-// Quando a página recarrega, verifica se o cliente tem um pedido em andamento na memória
 const pedidoAtivoId = localStorage.getItem('meuPedidoNutriLife');
-if (pedidoAtivoId) {
-    escutarStatusPedido(pedidoAtivoId);
-}
-// ==========================================
+if (pedidoAtivoId) escutarStatusPedido(pedidoAtivoId);
 
 onSnapshot(doc(db, "loja", "configuracoes"), (docSnap) => {
     if (docSnap.exists()) {
         const config = docSnap.data();
-        lojaAberta = config.status_loja !== false;
-        configDelivery.habilitado = (config.delivery_status === true);
-        
-        const optDelivery = document.getElementById('opt-delivery');
-        const deliveryInfoText = document.getElementById('store-delivery-info');
-        
-        if (configDelivery.habilitado) {
-            optDelivery.style.display = 'block';
-            let tempoStr = config.delivery_time ? config.delivery_time : "Disponível";
-            deliveryInfoText.innerHTML = `${tempoStr} <span style="font-size:10px; display:block; color:var(--primary-green)">A partir do bairro</span>`;
-        } else {
-            optDelivery.style.display = 'none'; document.getElementById('tipo-entrega').value = 'Retirada'; toggleEndereco(); deliveryInfoText.innerText = "Indisponível";
-        }
-
-        if(config.nome_loja) document.getElementById('store-brand-title').innerText = config.nome_loja;
-        if(config.frase_efeito) document.getElementById('store-quote').innerText = `"${config.frase_efeito}"`;
-        if(config.endereco) document.getElementById('store-address').innerText = config.endereco;
-
+        lojaAberta = config.status_loja !== false; configDelivery.habilitado = (config.delivery_status === true); configDelivery.taxa = parseFloat(config.delivery_fee) || 0;
+        const optDelivery = document.getElementById('opt-delivery'); const deliveryInfoText = document.getElementById('store-delivery-info');
+        if (configDelivery.habilitado) { optDelivery.style.display = 'block'; let tempoStr = config.delivery_time ? config.delivery_time : "Disponível"; deliveryInfoText.innerHTML = `${tempoStr} <span style="font-size:10px; display:block; color:var(--primary-green)">A partir do bairro</span>`; } 
+        else { optDelivery.style.display = 'none'; document.getElementById('tipo-entrega').value = 'Retirada'; toggleEndereco(); deliveryInfoText.innerText = "Indisponível"; }
+        if(config.nome_loja) document.getElementById('store-brand-title').innerText = config.nome_loja; if(config.frase_efeito) document.getElementById('store-quote').innerText = `"${config.frase_efeito}"`; if(config.endereco) document.getElementById('store-address').innerText = config.endereco;
         const linkZap = document.getElementById('link-whatsapp');
-        if(config.telefone && config.telefone.trim() !== '') { 
-            lojaTelefone = config.telefone.replace(/\D/g,''); 
-            linkZap.href = `https://wa.me/55${lojaTelefone}`; 
-            linkZap.style.display = 'flex'; 
-        } else { lojaTelefone = ''; linkZap.style.display = 'none'; }
-
-        const linkInsta = document.getElementById('link-instagram');
-        if(config.instagram && config.instagram.trim() !== '') { linkInsta.href = config.instagram; linkInsta.style.display = 'flex'; } else { linkInsta.style.display = 'none'; }
-        const linkFace = document.getElementById('link-facebook');
-        if(config.facebook && config.facebook.trim() !== '') { linkFace.href = config.facebook; linkFace.style.display = 'flex'; } else { linkFace.style.display = 'none'; }
-
+        if(config.telefone && config.telefone.trim() !== '') { lojaTelefone = config.telefone.replace(/\D/g,''); linkZap.href = `https://wa.me/55${lojaTelefone}`; linkZap.style.display = 'flex'; } else { lojaTelefone = ''; linkZap.style.display = 'none'; }
+        const linkInsta = document.getElementById('link-instagram'); if(config.instagram && config.instagram.trim() !== '') { linkInsta.href = config.instagram; linkInsta.style.display = 'flex'; } else { linkInsta.style.display = 'none'; }
+        const linkFace = document.getElementById('link-facebook'); if(config.facebook && config.facebook.trim() !== '') { linkFace.href = config.facebook; linkFace.style.display = 'flex'; } else { linkFace.style.display = 'none'; }
         if(config.pedido_minimo && config.pedido_minimo.trim() !== '') { document.getElementById('store-min-order').innerText = config.pedido_minimo; } else { document.getElementById('store-min-order').innerText = "Não há"; }
-        if(config.hr_semana) document.getElementById('hours-weekday').innerText = config.hr_semana;
-        if(config.hr_sabado) document.getElementById('hours-saturday').innerText = config.hr_sabado;
-        if(config.hr_domingo) document.getElementById('hours-sunday').innerText = config.hr_domingo;
-
-        const bannerFechado = document.getElementById('loja-fechada-banner');
-        if (!lojaAberta) { bannerFechado.style.display = 'block'; } else { bannerFechado.style.display = 'none'; }
+        if(config.hr_semana) document.getElementById('hours-weekday').innerText = config.hr_semana; if(config.hr_sabado) document.getElementById('hours-saturday').innerText = config.hr_sabado; if(config.hr_domingo) document.getElementById('hours-sunday').innerText = config.hr_domingo;
+        const bannerFechado = document.getElementById('loja-fechada-banner'); if (!lojaAberta) { bannerFechado.style.display = 'block'; } else { bannerFechado.style.display = 'none'; }
     }
 });
 
 onSnapshot(collection(db, "taxas_entrega"), (snapshot) => {
-    taxasDisponiveis = [];
-    const selectBairro = document.getElementById('end-bairro');
-    selectBairro.innerHTML = '<option value="">Selecione seu Bairro / Região...</option>';
-    snapshot.forEach(doc => {
-        const taxa = { id: doc.id, ...doc.data() };
-        taxasDisponiveis.push(taxa);
-        selectBairro.innerHTML += `<option value="${taxa.id}">${taxa.bairro} (+ ${formatarMoeda(taxa.valor)})</option>`;
-    });
+    taxasDisponiveis = []; const selectBairro = document.getElementById('end-bairro'); selectBairro.innerHTML = '<option value="">Selecione seu Bairro / Região...</option>';
+    snapshot.forEach(doc => { const taxa = { id: doc.id, ...doc.data() }; taxasDisponiveis.push(taxa); selectBairro.innerHTML += `<option value="${taxa.id}">${taxa.bairro} (+ ${formatarMoeda(taxa.valor)})</option>`; });
 });
+onSnapshot(collection(db, "promocoes"), (snapshot) => { promocoesDisponiveis = []; snapshot.forEach(doc => promocoesDisponiveis.push({ id: doc.id, ...doc.data() })); });
 
-onSnapshot(collection(db, "promocoes"), (snapshot) => {
-    promocoesDisponiveis = [];
-    snapshot.forEach(doc => promocoesDisponiveis.push({ id: doc.id, ...doc.data() }));
-});
-
-const alertaModal = document.getElementById('custom-alert');
-const alertaMensagem = document.getElementById('custom-alert-message');
-const alertaBtn = document.getElementById('custom-alert-btn');
+const alertaModal = document.getElementById('custom-alert'); const alertaMensagem = document.getElementById('custom-alert-message'); const alertaBtn = document.getElementById('custom-alert-btn');
 function mostrarAlerta(mensagem) { alertaMensagem.innerText = mensagem; alertaModal.classList.add('active'); }
 alertaBtn.addEventListener('click', () => alertaModal.classList.remove('active'));
 
@@ -185,6 +110,108 @@ inputBusca.addEventListener('input', (evento) => {
     const cardapioFiltrado = cardapioOficial.map(secao => { const produtosFiltrados = secao.produtos.filter(p => p.nome.toLowerCase().includes(termo) || p.desc.toLowerCase().includes(termo)); return { ...secao, produtos: produtosFiltrados }; }).filter(secao => secao.produtos.length > 0); 
     renderizarCardapio(cardapioFiltrado);
 });
+
+// ==========================================
+// MUDANÇA: MURAL DE AVALIAÇÕES (CLIENTE)
+// ==========================================
+const avalCarousel = document.getElementById('reviews-carousel');
+
+// Escuta as avaliações no banco de dados e só exibe as "aprovadas"
+onSnapshot(collection(db, "avaliacoes"), (snapshot) => {
+    let htmlAvals = '';
+    let temAvaliacao = false;
+
+    snapshot.forEach(docSnap => {
+        const aval = docSnap.data();
+        if (aval.status === 'aprovado') {
+            temAvaliacao = true;
+            let estrelasHtml = '⭐'.repeat(aval.nota);
+            let imgHtml = aval.imagem ? `<img src="${aval.imagem}" class="review-img">` : '';
+            
+            htmlAvals += `
+                <div class="review-card">
+                    <div class="review-top">
+                        <span class="review-name"><i class="fa-solid fa-user-circle" style="color:var(--primary-green); margin-right:5px;"></i>${aval.nome}</span>
+                        <span class="review-stars">${estrelasHtml}</span>
+                    </div>
+                    <p class="review-text">"${aval.comentario}"</p>
+                    ${imgHtml}
+                </div>
+            `;
+        }
+    });
+
+    if (temAvaliacao) {
+        avalCarousel.innerHTML = htmlAvals;
+    } else {
+        avalCarousel.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); padding: 0 20px;">Seja o primeiro a deixar uma foto e avaliação do seu pedido!</p>';
+    }
+});
+
+// Lógica de abrir o modal de avaliação
+const modalAvaliacao = document.getElementById('avaliacao-modal');
+const fileInputAval = document.getElementById('aval-img-file');
+const previewImgAval = document.getElementById('aval-img-preview');
+
+window.abrirModalAvaliacao = function() {
+    document.getElementById('aval-nome').value = ''; document.getElementById('aval-texto').value = ''; document.getElementById('aval-img-base64').value = '';
+    fileInputAval.value = ''; previewImgAval.style.display = 'none';
+    document.body.style.overflow = 'hidden';
+    modalAvaliacao.classList.add('active');
+}
+
+window.fecharModalAvaliacao = function() {
+    modalAvaliacao.classList.remove('active'); document.body.style.overflow = '';
+}
+
+// Câmera Mágica para espremer a foto da avaliação
+fileInputAval.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 500; const MAX_HEIGHT = 500; let width = img.width; let height = img.height;
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
+                const base64String = canvas.toDataURL('image/jpeg', 0.7);
+                previewImgAval.src = base64String; previewImgAval.style.display = 'block'; document.getElementById('aval-img-base64').value = base64String;
+            }
+            img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+window.enviarAvaliacao = async function() {
+    const nome = document.getElementById('aval-nome').value;
+    const nota = parseInt(document.getElementById('aval-nota').value);
+    const texto = document.getElementById('aval-texto').value;
+    const imagem = document.getElementById('aval-img-base64').value;
+
+    if(!nome || !texto) return mostrarAlerta("Por favor, preencha seu nome e um comentário.");
+
+    const btnEnviar = document.getElementById('btn-enviar-avaliacao');
+    const txtOriginal = btnEnviar.innerText; btnEnviar.innerText = "Enviando..."; btnEnviar.disabled = true;
+
+    try {
+        await addDoc(collection(db, "avaliacoes"), {
+            nome: nome, nota: nota, comentario: texto, imagem: imagem,
+            data_hora: new Date().toISOString(),
+            status: "pendente" // Cai no seu painel para aprovar!
+        });
+        fecharModalAvaliacao();
+        mostrarAlerta("Muito obrigado! Sua avaliação foi enviada e em breve aparecerá no nosso mural. ❤️");
+    } catch (e) {
+        mostrarAlerta("Erro ao enviar avaliação. Tente novamente.");
+    } finally {
+        btnEnviar.innerText = txtOriginal; btnEnviar.disabled = false;
+    }
+}
+// ==========================================
+
 
 let carrinho = []; let produtoAtual = null; let quantidadeAtual = 1;
 const modalProduto = document.getElementById('product-modal'); const btnCloseModalProduto = document.getElementById('close-modal'); const textoQuantidade = document.querySelector('.qty-number'); const textoTotalModal = document.getElementById('modal-total'); const campoObservacao = document.querySelector('.modal-options textarea');
@@ -284,95 +311,55 @@ window.removerDoCarrinho = function(index) {
 window.fecharLimparTudo = function() {
     carrinho = []; cupomAtivo = null; 
     document.getElementById('msg-cupom').style.display = 'none'; document.getElementById('input-cupom').value = '';
-    atualizarBarraCarrinho(); 
-    document.getElementById('whatsapp-modal').classList.remove('active'); 
-    document.body.style.overflow = '';
+    atualizarBarraCarrinho(); document.getElementById('whatsapp-modal').classList.remove('active'); document.body.style.overflow = '';
     document.getElementById('cliente-nome').value = ''; document.getElementById('end-bairro').value = ''; document.getElementById('end-rua').value = ''; document.getElementById('end-numero').value = ''; document.getElementById('end-comp').value = '';
 }
 
 document.getElementById('btn-finalizar-pedido').addEventListener('click', async () => {
     if (!lojaAberta) return mostrarAlerta("Nossa loja está fechada no momento. Volte mais tarde!");
+    const nome = document.getElementById('cliente-nome').value; const selectPgto = document.getElementById('forma-pagamento'); const pagamentoId = selectPgto.value; const pagamentoTexto = selectPgto.options[selectPgto.selectedIndex].text; const tipoEntrega = document.getElementById('tipo-entrega').value;
 
-    const nome = document.getElementById('cliente-nome').value;
-    const selectPgto = document.getElementById('forma-pagamento');
-    const pagamentoId = selectPgto.value;
-    const pagamentoTexto = selectPgto.options[selectPgto.selectedIndex].text;
-    const tipoEntrega = document.getElementById('tipo-entrega').value;
-
-    if (nome.trim() === '') return mostrarAlerta("Por favor, digite seu nome.");
-    if (pagamentoId === '') return mostrarAlerta("Por favor, selecione a forma de pagamento.");
+    if (nome.trim() === '') return mostrarAlerta("Por favor, digite seu nome."); if (pagamentoId === '') return mostrarAlerta("Por favor, selecione a forma de pagamento.");
 
     let enderecoFinal = ""; let taxaCobrada = 0; let bairroNome = "";
     if (tipoEntrega === 'Delivery') {
-        const idBairro = document.getElementById('end-bairro').value;
-        const rua = document.getElementById('end-rua').value; const numero = document.getElementById('end-numero').value; const comp = document.getElementById('end-comp').value;
-        if (!idBairro) return mostrarAlerta("Por favor, selecione o Bairro de entrega.");
-        if (!rua || !numero) return mostrarAlerta("Por favor, preencha Rua e Número.");
-        
-        const bairroObj = taxasDisponiveis.find(t => t.id === idBairro);
-        bairroNome = bairroObj.bairro;
-        enderecoFinal = `${rua}, ${numero} - ${bairroNome}`; if(comp) enderecoFinal += ` (${comp})`;
-        taxaCobrada = bairroObj.valor;
+        const idBairro = document.getElementById('end-bairro').value; const rua = document.getElementById('end-rua').value; const numero = document.getElementById('end-numero').value; const comp = document.getElementById('end-comp').value;
+        if (!idBairro) return mostrarAlerta("Por favor, selecione o Bairro de entrega."); if (!rua || !numero) return mostrarAlerta("Por favor, preencha Rua e Número.");
+        const bairroObj = taxasDisponiveis.find(t => t.id === idBairro); bairroNome = bairroObj.bairro; enderecoFinal = `${rua}, ${numero} - ${bairroNome}`; if(comp) enderecoFinal += ` (${comp})`; taxaCobrada = bairroObj.valor;
     }
 
     const valorTotalItens = carrinho.reduce((soma, item) => soma + item.total, 0);
     let descontoCobrado = 0; let cupomNome = '';
     if (cupomAtivo) {
         if(cupomAtivo.tipo === 'porcentagem') descontoCobrado = valorTotalItens * (cupomAtivo.valor / 100); else descontoCobrado = cupomAtivo.valor;
-        if(descontoCobrado > valorTotalItens) descontoCobrado = valorTotalItens;
-        cupomNome = cupomAtivo.codigo;
+        if(descontoCobrado > valorTotalItens) descontoCobrado = valorTotalItens; cupomNome = cupomAtivo.codigo;
     }
-
     const totalFinalCalculado = (valorTotalItens - descontoCobrado) + taxaCobrada;
 
     const pedidoFinal = { 
         cliente: nome, pagamento: pagamentoTexto, tipo_entrega: tipoEntrega, endereco_entrega: enderecoFinal, taxa_entrega: taxaCobrada, 
-        cupom_aplicado: cupomNome, valor_desconto: descontoCobrado,
-        itens: carrinho, total_pedido: totalFinalCalculado, data_hora: new Date().toISOString(), status: "novo" 
+        cupom_aplicado: cupomNome, valor_desconto: descontoCobrado, itens: carrinho, total_pedido: totalFinalCalculado, data_hora: new Date().toISOString(), status: "novo" 
     };
 
     const btnFinalizar = document.getElementById('btn-finalizar-pedido'); const textoOriginal = btnFinalizar.innerText; btnFinalizar.innerText = "Processando..."; btnFinalizar.disabled = true;
 
     try {
-        // MUDANÇA: PEGAR O ID AO SALVAR PARA O RASTREADOR LER DEPOIS!
         const docRef = await addDoc(collection(db, "pedidos"), pedidoFinal);
-        
-        // SALVA O ID DO PEDIDO NA MEMÓRIA DO NAVEGADOR
         localStorage.setItem('meuPedidoNutriLife', docRef.id);
-        
-        // Ativa o ouvinte para o Balão Flutuante (Rastreador)
         escutarStatusPedido(docRef.id);
 
-        let textoWhats = `*NOVO PEDIDO!* 🍔\n`;
-        textoWhats += `*Cliente:* ${nome}\n`;
-        textoWhats += `*Entrega:* ${tipoEntrega}\n`;
-        if (tipoEntrega === 'Delivery') { textoWhats += `*Endereço:* ${enderecoFinal}\n`; }
+        let textoWhats = `*NOVO PEDIDO!* 🍔\n*Cliente:* ${nome}\n*Entrega:* ${tipoEntrega}\n`;
+        if (tipoEntrega === 'Delivery') textoWhats += `*Endereço:* ${enderecoFinal}\n`;
         textoWhats += `\n*RESUMO:*\n`;
-        carrinho.forEach(item => {
-            textoWhats += `${item.quantidade}x ${item.nome} - ${formatarMoeda(item.total)}\n`;
-            if(item.observacao) textoWhats += `   _Obs: ${item.observacao}_\n`;
-        });
+        carrinho.forEach(item => { textoWhats += `${item.quantidade}x ${item.nome} - ${formatarMoeda(item.total)}\n`; if(item.observacao) textoWhats += `   _Obs: ${item.observacao}_\n`; });
         textoWhats += `\n*Subtotal:* ${formatarMoeda(valorTotalItens)}\n`;
         if(descontoCobrado > 0) textoWhats += `*Desconto:* - ${formatarMoeda(descontoCobrado)} (${cupomNome})\n`;
         if(taxaCobrada > 0) textoWhats += `*Taxa:* ${formatarMoeda(taxaCobrada)}\n`;
-        textoWhats += `*Total:* ${formatarMoeda(totalFinalCalculado)}\n\n`;
-        textoWhats += `*Pagamento:* ${pagamentoTexto}`;
+        textoWhats += `*Total:* ${formatarMoeda(totalFinalCalculado)}\n\n*Pagamento:* ${pagamentoTexto}`;
 
-        const encodedText = encodeURIComponent(textoWhats);
-        const waLink = `https://wa.me/55${lojaTelefone}?text=${encodedText}`;
-        
-        document.getElementById('btn-enviar-whatsapp').onclick = () => {
-            window.open(waLink, '_blank');
-            fecharLimparTudo();
-        };
+        const encodedText = encodeURIComponent(textoWhats); const waLink = `https://wa.me/55${lojaTelefone}?text=${encodedText}`;
+        document.getElementById('btn-enviar-whatsapp').onclick = () => { window.open(waLink, '_blank'); fecharLimparTudo(); };
 
-        cartModal.classList.remove('active');
-        document.getElementById('whatsapp-modal').classList.add('active');
-
-    } catch (erro) { 
-        mostrarAlerta("Ocorreu um erro ao enviar. Tente novamente."); 
-    } finally { 
-        btnFinalizar.innerText = textoOriginal; btnFinalizar.disabled = false; 
-    }
+        cartModal.classList.remove('active'); document.getElementById('whatsapp-modal').classList.add('active');
+    } catch (erro) { mostrarAlerta("Ocorreu um erro ao enviar. Tente novamente."); } finally { btnFinalizar.innerText = textoOriginal; btnFinalizar.disabled = false; }
 });
-
