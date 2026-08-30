@@ -32,15 +32,7 @@ document.getElementById('menu-pedidos').addEventListener('click', (e) => { e.pre
 document.getElementById('menu-cardapio').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'cardapio'; esconderTodasViews(); document.getElementById('view-cardapio').style.display = 'flex'; document.getElementById('menu-cardapio').classList.add('active'); document.getElementById('header-title').innerText = "Gerenciar Cardápio"; });
 document.getElementById('menu-taxas').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'taxas'; esconderTodasViews(); document.getElementById('view-taxas').style.display = 'flex'; document.getElementById('menu-taxas').classList.add('active'); document.getElementById('header-title').innerText = "Taxas de Entrega"; });
 document.getElementById('menu-promocoes').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'promocoes'; esconderTodasViews(); document.getElementById('view-promocoes').style.display = 'flex'; document.getElementById('menu-promocoes').classList.add('active'); document.getElementById('header-title').innerText = "Cupons e Promoções"; });
-
-document.getElementById('menu-avaliacoes').addEventListener('click', (e) => { 
-    e.preventDefault(); viewAtual = 'avaliacoes'; esconderTodasViews(); 
-    document.getElementById('view-avaliacoes').style.display = 'flex'; 
-    document.getElementById('menu-avaliacoes').classList.add('active'); 
-    document.getElementById('header-title').innerText = "Moderação de Avaliações"; 
-    badgeAvaliacoes.style.display = 'none'; 
-});
-
+document.getElementById('menu-avaliacoes').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'avaliacoes'; esconderTodasViews(); document.getElementById('view-avaliacoes').style.display = 'flex'; document.getElementById('menu-avaliacoes').classList.add('active'); document.getElementById('header-title').innerText = "Moderação de Avaliações"; badgeAvaliacoes.style.display = 'none'; });
 document.getElementById('menu-relatorios').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'relatorios'; esconderTodasViews(); document.getElementById('view-relatorios').style.display = 'flex'; document.getElementById('menu-relatorios').classList.add('active'); document.getElementById('header-title').innerText = "Relatórios e Vendas"; });
 document.getElementById('menu-config').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'config'; esconderTodasViews(); document.getElementById('view-config').style.display = 'flex'; document.getElementById('menu-config').classList.add('active'); document.getElementById('header-title').innerText = "Configurações da Loja"; });
 
@@ -105,87 +97,39 @@ function renderizarPaginaVendas() {
 const tabBtns = document.querySelectorAll('.tab-btn'); const kanbanCols = document.querySelectorAll('.kanban-column');
 tabBtns.forEach(btn => { btn.addEventListener('click', () => { tabBtns.forEach(b => b.classList.remove('active')); kanbanCols.forEach(c => c.classList.remove('active-mobile')); btn.classList.add('active'); document.getElementById(btn.getAttribute('data-target')).classList.add('active-mobile'); }); });
 
-// ==============================
-// MODERAÇÃO DE AVALIAÇÕES
-// ==============================
-let avaliacoes = [];
-let primeiraCargaAval = true;
-
+let avaliacoes = []; let primeiraCargaAval = true;
 onSnapshot(collection(db, "avaliacoes"), (snapshot) => {
     avaliacoes = [];
-    
     snapshot.docChanges().forEach((change) => { 
         if (change.type === "added" && !primeiraCargaAval) { 
-            if (change.doc.data().status === 'pendente') { 
-                tocarSomNotificacao(); 
-                if (viewAtual !== 'avaliacoes') badgeAvaliacoes.style.display = 'flex'; 
-            } 
+            if (change.doc.data().status === 'pendente') { tocarSomNotificacao(); if (viewAtual !== 'avaliacoes') badgeAvaliacoes.style.display = 'flex'; } 
         } 
     });
     primeiraCargaAval = false;
-
     snapshot.forEach(doc => avaliacoes.push({ id: doc.id, ...doc.data() })); 
     avaliacoes.sort((a, b) => new Date(b.data_hora) - new Date(a.data_hora));
     renderizarAvaliacoes();
 });
 
 function renderizarAvaliacoes() {
-    const listaPendentes = document.getElementById('lista-avaliacoes-pendentes');
-    const listaAprovadas = document.getElementById('lista-avaliacoes-aprovadas');
-    
-    listaPendentes.innerHTML = '';
-    listaAprovadas.innerHTML = '';
-    let qtdPendentes = 0, qtdAprovadas = 0;
-
+    const listaPendentes = document.getElementById('lista-avaliacoes-pendentes'); const listaAprovadas = document.getElementById('lista-avaliacoes-aprovadas');
+    listaPendentes.innerHTML = ''; listaAprovadas.innerHTML = ''; let qtdPendentes = 0, qtdAprovadas = 0;
     avaliacoes.forEach(aval => {
         let estrelas = '⭐'.repeat(aval.nota);
         let miniImg = aval.imagem ? `<img src="${aval.imagem}" style="width:50px; height:50px; border-radius:8px; object-fit:cover; margin-right:15px; border:1px solid #ccc;">` : '';
-        
-        let htmlAval = `
-            <div class="prod-item" style="align-items: flex-start; flex-direction: column;">
-                <div style="display:flex; width: 100%;">
-                    ${miniImg}
-                    <div style="flex:1;">
-                        <strong style="font-size:14px;">${aval.nome} <span style="font-size:10px; color:#D62828;">${estrelas}</span></strong>
-                        <span style="font-size:11px; color:#999; display:block; margin-bottom:5px;">${formatarDataHora(aval.data_hora)}</span>
-                        <p style="font-size:13px; color:var(--text-dark); font-style:italic;">"${aval.comentario}"</p>
-                    </div>
-                </div>
-                <div style="width: 100%; display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px;">
-                    ${aval.status === 'pendente' ? `<button onclick="aprovarAvaliacao('${aval.id}')" style="background:var(--primary-green); color:white; border:none; padding:5px 15px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">Aprovar</button>` : ''}
-                    <button onclick="excluirAvaliacao('${aval.id}')" style="background:#D62828; color:white; border:none; padding:5px 15px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">Excluir</button>
-                </div>
-            </div>
-        `;
-
+        let htmlAval = `<div class="prod-item" style="align-items: flex-start; flex-direction: column;"><div style="display:flex; width: 100%;">${miniImg}<div style="flex:1;"><strong style="font-size:14px;">${aval.nome} <span style="font-size:10px; color:#D62828;">${estrelas}</span></strong><span style="font-size:11px; color:#999; display:block; margin-bottom:5px;">${formatarDataHora(aval.data_hora)}</span><p style="font-size:13px; color:var(--text-dark); font-style:italic;">"${aval.comentario}"</p></div></div><div style="width: 100%; display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px;">${aval.status === 'pendente' ? `<button onclick="aprovarAvaliacao('${aval.id}')" style="background:var(--primary-green); color:white; border:none; padding:5px 15px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">Aprovar</button>` : ''}<button onclick="excluirAvaliacao('${aval.id}')" style="background:#D62828; color:white; border:none; padding:5px 15px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">Excluir</button></div></div>`;
         if (aval.status === 'pendente') { listaPendentes.innerHTML += htmlAval; qtdPendentes++; }
         if (aval.status === 'aprovado') { listaAprovadas.innerHTML += htmlAval; qtdAprovadas++; }
     });
-
     if(qtdPendentes === 0) listaPendentes.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação pendente.</p>';
     if(qtdAprovadas === 0) listaAprovadas.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação aprovada.</p>';
 }
+window.aprovarAvaliacao = async function(id) { if(confirm("Aprovar e exibir no site?")) { await updateDoc(doc(db, "avaliacoes", id), { status: "aprovado" }); } }
+window.excluirAvaliacao = async function(id) { if(confirm("Apagar definitivamente essa avaliação?")) { await deleteDoc(doc(db, "avaliacoes", id)); } }
 
-window.aprovarAvaliacao = async function(id) {
-    if(confirm("Aprovar e exibir no site?")) {
-        await updateDoc(doc(db, "avaliacoes", id), { status: "aprovado" });
-    }
-}
-
-window.excluirAvaliacao = async function(id) {
-    if(confirm("Apagar definitivamente essa avaliação?")) {
-        await deleteDoc(doc(db, "avaliacoes", id));
-    }
-}
-
-
-// ==============================
-// GESTÃO DO CARDÁPIO E OUTROS
-// ==============================
 let categorias = []; let produtos = [];
 onSnapshot(collection(db, "categorias"), (snapshot) => { categorias = []; snapshot.forEach(doc => categorias.push({ id: doc.id, ...doc.data() })); renderizarCardapioAdmin(); });
 onSnapshot(collection(db, "produtos"), (snapshot) => { produtos = []; snapshot.forEach(doc => produtos.push({ id: doc.id, ...doc.data() })); renderizarCardapioAdmin(); });
-
 function renderizarCardapioAdmin() {
     const lista = document.getElementById('lista-cardapio-admin'); lista.innerHTML = '';
     if (categorias.length === 0) { lista.innerHTML = '<p style="color: var(--text-muted); margin-top: 20px;">Você ainda não tem categorias cadastradas.</p>'; return; }
@@ -303,10 +247,40 @@ const docConfigRef = doc(db, "loja", "configuracoes");
 onSnapshot(docConfigRef, (docSnap) => {
     if(docSnap.exists()) {
         const config = docSnap.data();
-        document.getElementById('conf-status').checked = config.status_loja; document.getElementById('conf-delivery-status').checked = config.delivery_status || false; document.getElementById('conf-delivery-time').value = config.delivery_time || ""; document.getElementById('conf-nome').value = config.nome_loja || ""; document.getElementById('conf-frase').value = config.frase_efeito || ""; document.getElementById('conf-telefone').value = config.telefone || ""; document.getElementById('conf-endereco').value = config.endereco || ""; document.getElementById('conf-instagram').value = config.instagram || ""; document.getElementById('conf-facebook').value = config.facebook || ""; document.getElementById('conf-hr-semana').value = config.hr_semana || ""; document.getElementById('conf-hr-sabado').value = config.hr_sabado || ""; document.getElementById('conf-hr-domingo').value = config.hr_domingo || "";
+        document.getElementById('conf-status').checked = config.status_loja; 
+        document.getElementById('conf-delivery-status').checked = config.delivery_status || false; 
+        document.getElementById('conf-delivery-fee').value = config.delivery_fee || ""; 
+        document.getElementById('conf-delivery-time').value = config.delivery_time || ""; 
+        
+        // MUDANÇA: Lê a chave PIX salva
+        document.getElementById('conf-chave-pix').value = config.chave_pix || ""; 
+
+        document.getElementById('conf-nome').value = config.nome_loja || ""; 
+        document.getElementById('conf-frase').value = config.frase_efeito || ""; 
+        document.getElementById('conf-telefone').value = config.telefone || ""; 
+        document.getElementById('conf-endereco').value = config.endereco || ""; 
+        document.getElementById('conf-instagram').value = config.instagram || ""; 
+        document.getElementById('conf-facebook').value = config.facebook || ""; 
+        document.getElementById('conf-hr-semana').value = config.hr_semana || ""; 
+        document.getElementById('conf-hr-sabado').value = config.hr_sabado || ""; 
+        document.getElementById('conf-hr-domingo').value = config.hr_domingo || "";
     }
 });
 window.salvarConfiguracoes = async function() {
-    const dadosConfig = { status_loja: document.getElementById('conf-status').checked, delivery_status: document.getElementById('conf-delivery-status').checked, delivery_time: document.getElementById('conf-delivery-time').value, nome_loja: document.getElementById('conf-nome').value, frase_efeito: document.getElementById('conf-frase').value, telefone: document.getElementById('conf-telefone').value, endereco: document.getElementById('conf-endereco').value, instagram: document.getElementById('conf-instagram').value, facebook: document.getElementById('conf-facebook').value, hr_semana: document.getElementById('conf-hr-semana').value, hr_sabado: document.getElementById('conf-hr-sabado').value, hr_domingo: document.getElementById('conf-hr-domingo').value };
+    const dadosConfig = { 
+        status_loja: document.getElementById('conf-status').checked, 
+        delivery_status: document.getElementById('conf-delivery-status').checked, 
+        delivery_time: document.getElementById('conf-delivery-time').value, 
+        chave_pix: document.getElementById('conf-chave-pix').value, // MUDANÇA: Salva a Chave PIX
+        nome_loja: document.getElementById('conf-nome').value, 
+        frase_efeito: document.getElementById('conf-frase').value, 
+        telefone: document.getElementById('conf-telefone').value, 
+        endereco: document.getElementById('conf-endereco').value, 
+        instagram: document.getElementById('conf-instagram').value, 
+        facebook: document.getElementById('conf-facebook').value, 
+        hr_semana: document.getElementById('conf-hr-semana').value, 
+        hr_sabado: document.getElementById('conf-hr-sabado').value, 
+        hr_domingo: document.getElementById('conf-hr-domingo').value 
+    };
     try { await setDoc(docConfigRef, dadosConfig, {merge: true}); alert("Configurações salvas e aplicadas no site em tempo real!"); } catch (e) { alert("Erro ao salvar configurações."); }
 }
