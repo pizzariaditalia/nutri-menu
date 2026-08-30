@@ -207,31 +207,13 @@ window.aplicarCupom = function() {
     cupomAtivo = cupom; msg.innerText = "Cupom aplicado com sucesso!"; msg.style.color = "var(--color-ready)"; msg.style.display = "block"; renderizarItensCarrinho();
 }
 
-// ==========================================
-// MUDANÇA: LÓGICA DE EXIBIR O MODO "MESA"
-// ==========================================
 window.verificarRegrasCheckout = function() {
-    const tipo = document.getElementById('tipo-entrega').value; 
-    const boxEnd = document.getElementById('box-endereco'); 
-    const lblTaxa = document.getElementById('label-taxa'); 
-    const pgto = document.getElementById('forma-pagamento').value; 
-    const boxPix = document.getElementById('box-pix-antecipado'); 
-    const optPix = document.getElementById('opt-pgto-pix');
-    const boxMesa = document.getElementById('box-mesa');
-
-    if (tipo === 'Delivery') { 
-        boxEnd.style.display = 'block'; boxMesa.style.display = 'none'; lblTaxa.style.display = 'inline'; optPix.innerText = "Pix (Pagar agora)"; 
-    } else if (tipo === 'Mesa') {
-        boxEnd.style.display = 'none'; boxMesa.style.display = 'block'; lblTaxa.style.display = 'none'; optPix.innerText = "Pix (Pagar na mesa)"; 
-    } else { 
-        boxEnd.style.display = 'none'; boxMesa.style.display = 'none'; lblTaxa.style.display = 'none'; optPix.innerText = "Pix (Na retirada)"; 
-    }
-    
+    const tipo = document.getElementById('tipo-entrega').value; const boxEnd = document.getElementById('box-endereco'); const lblTaxa = document.getElementById('label-taxa'); const pgto = document.getElementById('forma-pagamento').value; const boxPix = document.getElementById('box-pix-antecipado'); const optPix = document.getElementById('opt-pgto-pix'); const boxMesa = document.getElementById('box-mesa');
+    if (tipo === 'Delivery') { boxEnd.style.display = 'block'; boxMesa.style.display = 'none'; lblTaxa.style.display = 'inline'; optPix.innerText = "Pix (Pagar agora)"; } else if (tipo === 'Mesa') { boxEnd.style.display = 'none'; boxMesa.style.display = 'block'; lblTaxa.style.display = 'none'; optPix.innerText = "Pix (Pagar na mesa)"; } else { boxEnd.style.display = 'none'; boxMesa.style.display = 'none'; lblTaxa.style.display = 'none'; optPix.innerText = "Pix (Na retirada)"; }
     if (tipo === 'Delivery' && pgto === 'pix') { boxPix.style.display = 'block'; } else { boxPix.style.display = 'none'; }
     if (carrinho.length > 0) renderizarItensCarrinho();
 }
 window.toggleEndereco = window.verificarRegrasCheckout; 
-
 window.copiarPix = function() { navigator.clipboard.writeText(chavePixLoja).then(() => { mostrarAlerta("Chave PIX copiada para a área de transferência!"); }); }
 
 document.querySelector('.btn-view-cart').addEventListener('click', () => {
@@ -263,10 +245,7 @@ window.renderizarItensCarrinho = function() {
     const totalFinal = (valorTotalItens - descontoCalc) + taxa; checkoutTotal.innerText = formatarMoeda(totalFinal);
 }
 
-window.removerDoCarrinho = function(index) {
-    carrinho.splice(index, 1); atualizarBarraCarrinho(); 
-    if (carrinho.length === 0) { cartModal.classList.remove('active'); document.body.style.overflow = ''; } else { renderizarItensCarrinho(); }
-}
+window.removerDoCarrinho = function(index) { carrinho.splice(index, 1); atualizarBarraCarrinho(); if (carrinho.length === 0) { cartModal.classList.remove('active'); document.body.style.overflow = ''; } else { renderizarItensCarrinho(); } }
 
 window.fecharLimparTudo = function() {
     carrinho = []; cupomAtivo = null; document.getElementById('msg-cupom').style.display = 'none'; document.getElementById('input-cupom').value = ''; atualizarBarraCarrinho(); document.getElementById('whatsapp-modal').classList.remove('active'); document.body.style.overflow = '';
@@ -285,21 +264,16 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
         if (!idBairro) return mostrarAlerta("Por favor, selecione o Bairro de entrega."); if (!rua || !numero) return mostrarAlerta("Por favor, preencha Rua e Número.");
         const bairroObj = taxasDisponiveis.find(t => t.id === idBairro); bairroNome = bairroObj.bairro; enderecoFinal = `${rua}, ${numero} - ${bairroNome}`; if(comp) enderecoFinal += ` (${comp})`; taxaCobrada = bairroObj.valor;
     } else if (tipoEntrega === 'Mesa') {
-        const numMesa = document.getElementById('num-mesa').value;
-        if (!numMesa) return mostrarAlerta("Por favor, informe o número da sua mesa.");
-        enderecoFinal = `Mesa ${numMesa}`; taxaCobrada = 0;
+        const numMesa = document.getElementById('num-mesa').value; if (!numMesa) return mostrarAlerta("Por favor, informe o número da sua mesa."); enderecoFinal = `Mesa ${numMesa}`; taxaCobrada = 0;
     }
 
-    const valorTotalItens = carrinho.reduce((soma, item) => soma + item.total, 0);
-    let descontoCobrado = 0; let cupomNome = '';
-    if (cupomAtivo) {
-        if(cupomAtivo.tipo === 'porcentagem') descontoCobrado = valorTotalItens * (cupomAtivo.valor / 100); else descontoCobrado = cupomAtivo.valor;
-        if(descontoCobrado > valorTotalItens) descontoCobrado = valorTotalItens; cupomNome = cupomAtivo.codigo;
-    }
+    const valorTotalItens = carrinho.reduce((soma, item) => soma + item.total, 0); let descontoCobrado = 0; let cupomNome = '';
+    if (cupomAtivo) { if(cupomAtivo.tipo === 'porcentagem') descontoCobrado = valorTotalItens * (cupomAtivo.valor / 100); else descontoCobrado = cupomAtivo.valor; if(descontoCobrado > valorTotalItens) descontoCobrado = valorTotalItens; cupomNome = cupomAtivo.codigo; }
     const totalFinalCalculado = (valorTotalItens - descontoCobrado) + taxaCobrada;
 
     const pedidoFinal = { 
-        cliente: nome, pagamento: pagamentoTexto, tipo_entrega: tipoEntrega, endereco_entrega: enderecoFinal, taxa_entrega: taxaCobrada, cupom_aplicado: cupomNome, valor_desconto: descontoCobrado, itens: carrinho, total_pedido: totalFinalCalculado, data_hora: new Date().toISOString(), status: "novo" 
+        cliente: nome, pagamento: pagamentoTexto, tipo_entrega: tipoEntrega, endereco_entrega: enderecoFinal, taxa_entrega: taxaCobrada, cupom_aplicado: cupomNome, valor_desconto: descontoCobrado, itens: carrinho, total_pedido: totalFinalCalculado, data_hora: new Date().toISOString(), status: "novo",
+        pago: false // MUDANÇA: Todo pedido nasce como NÃO PAGO
     };
 
     const btnFinalizar = document.getElementById('btn-finalizar-pedido'); const textoOriginal = btnFinalizar.innerText; btnFinalizar.innerText = "Processando..."; btnFinalizar.disabled = true;
@@ -327,24 +301,5 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
     } catch (erro) { mostrarAlerta("Ocorreu um erro ao enviar. Tente novamente."); } finally { btnFinalizar.innerText = textoOriginal; btnFinalizar.disabled = false; }
 });
 
-// ==========================================
-// MUDANÇA: A MÁGICA DO QR CODE DA MESA
-// ==========================================
-const urlParams = new URLSearchParams(window.location.search);
-const mesaParam = urlParams.get('mesa');
-if(mesaParam) {
-    // Se o cliente acessou pelo QR Code (ex: site.com/?mesa=05)
-    setTimeout(() => {
-        const selectEntrega = document.getElementById('tipo-entrega');
-        const inputMesa = document.getElementById('num-mesa');
-        
-        selectEntrega.value = 'Mesa';
-        inputMesa.value = mesaParam;
-        
-        // Trava para o cliente não mudar sem querer
-        selectEntrega.disabled = true;
-        inputMesa.disabled = true;
-        
-        verificarRegrasCheckout();
-    }, 1000); // Aguarda o HTML carregar
-}
+const urlParams = new URLSearchParams(window.location.search); const mesaParam = urlParams.get('mesa');
+if(mesaParam) { setTimeout(() => { const selectEntrega = document.getElementById('tipo-entrega'); const inputMesa = document.getElementById('num-mesa'); selectEntrega.value = 'Mesa'; inputMesa.value = mesaParam; selectEntrega.disabled = true; inputMesa.disabled = true; verificarRegrasCheckout(); }, 1000); }
