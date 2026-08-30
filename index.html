@@ -13,7 +13,6 @@
         <i class="fa-solid fa-triangle-exclamation"></i> LOJA FECHADA NO MOMENTO <i class="fa-solid fa-triangle-exclamation"></i>
     </div>
 
-    <!-- MUDANÇA: BALÃO FLUTUANTE DE STATUS DO PEDIDO -->
     <div id="order-status-widget" class="order-status-widget" style="display: none;">
         <div class="status-icon" id="order-status-icon">🕒</div>
         <div class="status-text-widget">
@@ -60,6 +59,18 @@
         </div>
     </section>
 
+    <!-- MUDANÇA: MURAL DE AVALIAÇÕES -->
+    <section class="reviews-section">
+        <div class="reviews-header">
+            <h2>A galera tá amando! ❤️</h2>
+            <button class="btn-review-add" onclick="abrirModalAvaliacao()"><i class="fa-solid fa-star"></i> Avaliar</button>
+        </div>
+        <div class="reviews-carousel" id="reviews-carousel">
+            <!-- As avaliações aprovadas entrarão aqui via JS -->
+            <p style="font-size: 13px; color: var(--text-muted); padding: 0 20px;">Seja o primeiro a deixar uma foto e avaliação do seu pedido!</p>
+        </div>
+    </section>
+
     <nav class="sticky-nav"><div class="nav-scroll" id="nav-categorias"></div></nav>
     <div class="search-container"><input type="text" class="search-input" id="search-input" placeholder="Buscar produto... ex: shake, whey, combo"></div>
     <main class="menu-container" id="menu-container"><p style="text-align: center; color: var(--text-muted); padding: 40px;">Carregando cardápio na nuvem...</p></main>
@@ -69,7 +80,7 @@
         <button class="btn-view-cart">Ver pedido</button>
     </div>
 
-    <!-- Modais -->
+    <!-- MODAL DE PRODUTO -->
     <div class="modal-overlay" id="product-modal">
         <div class="modal-content">
             <button class="close-modal" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -91,6 +102,7 @@
         </div>
     </div>
 
+    <!-- MODAL DO CARRINHO -->
     <div class="modal-overlay" id="cart-modal">
         <div class="modal-content" style="height: 90vh;">
             <button class="close-modal" id="close-cart-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -153,19 +165,54 @@
         </div>
     </div>
 
+    <!-- MODAL WHATSAPP -->
     <div class="modal-overlay" id="whatsapp-modal" style="align-items: center; z-index: 2000;">
         <div class="custom-alert-box" style="max-width: 350px;">
             <div style="font-size: 45px; color: #25D366; margin-bottom: 10px;"><i class="fa-brands fa-whatsapp"></i></div>
             <h2 style="font-size: 20px; color: var(--text-dark); margin-bottom: 8px;">Pedido Concluído!</h2>
             <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">Seu pedido já está na nossa cozinha! Para agilizar o atendimento, clique abaixo e nos envie a confirmação no WhatsApp.</p>
-            
-            <button class="btn-add" id="btn-enviar-whatsapp" style="width: 100%; padding: 14px; background-color: #25D366; font-size: 15px; border-radius: 12px; display: flex; justify-content: center; align-items: center; gap: 10px;">
-                <i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> Enviar via WhatsApp
-            </button>
+            <button class="btn-add" id="btn-enviar-whatsapp" style="width: 100%; padding: 14px; background-color: #25D366; font-size: 15px; border-radius: 12px; display: flex; justify-content: center; align-items: center; gap: 10px;"><i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> Enviar via WhatsApp</button>
             <button onclick="fecharLimparTudo()" style="background: transparent; border: none; color: var(--text-muted); font-size: 13px; margin-top: 15px; cursor: pointer; text-decoration: underline;">Fechar</button>
         </div>
     </div>
 
+    <!-- MUDANÇA: MODAL DE NOVA AVALIAÇÃO -->
+    <div class="modal-overlay" id="avaliacao-modal">
+        <div class="modal-content" style="max-height: 85vh;">
+            <button class="close-modal" onclick="fecharModalAvaliacao()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body">
+                <h2 class="modal-title">Sua Experiência</h2>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Mostre pra todo mundo como o seu pedido chegou e o que achou!</p>
+                
+                <input type="text" id="aval-nome" class="checkout-input" placeholder="Seu Nome" style="margin-bottom: 15px;">
+                
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <label style="font-size: 13px; color: var(--text-dark); display: block; margin-bottom: 5px; font-weight: bold;">Sua Nota</label>
+                    <select id="aval-nota" class="checkout-input" style="text-align: center; font-size: 18px; font-weight: bold; color: var(--accent-gold);">
+                        <option value="5">⭐⭐⭐⭐⭐ Perfeito!</option>
+                        <option value="4">⭐⭐⭐⭐ Muito Bom</option>
+                        <option value="3">⭐⭐⭐ Gostei</option>
+                        <option value="2">⭐⭐ Deixou a desejar</option>
+                        <option value="1">⭐ Ruim</option>
+                    </select>
+                </div>
+
+                <textarea id="aval-texto" class="checkout-input" placeholder="Escreva sobre o sabor, entrega, embalagem..." rows="3" style="margin-bottom: 15px;"></textarea>
+
+                <div style="background: #f8f8f8; border-radius: 8px; padding: 15px; border: 1px dashed #ccc; text-align: center;">
+                    <label style="font-size: 13px; color: var(--text-dark); display: block; margin-bottom: 10px; font-weight: bold;">Foto do Pedido (Opcional)</label>
+                    <input type="file" id="aval-img-file" accept="image/*" style="width: 100%; margin-bottom: 10px;">
+                    <img id="aval-img-preview" src="" style="max-width: 100%; max-height: 120px; object-fit: contain; display: none; border-radius: 8px; margin: 0 auto;">
+                    <input type="hidden" id="aval-img-base64">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-add-to-cart" id="btn-enviar-avaliacao" onclick="enviarAvaliacao()" style="justify-content: center;">Enviar Avaliação</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerta comum -->
     <div class="modal-overlay" id="custom-alert" style="align-items: center; z-index: 2000;">
         <div class="custom-alert-box">
             <p id="custom-alert-message">Mensagem do alerta</p>
@@ -176,4 +223,3 @@
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
-
