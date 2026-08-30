@@ -43,6 +43,16 @@ function formatarDataHora(dataString) { const data = new Date(dataString); retur
 function tocarSomNotificacao() { const audio = new Audio('assets/audio/notificacao.mp3'); audio.onerror = () => { audio.src = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg'; audio.play().catch(e=>e); }; audio.play().catch(e=>e); }
 
 let primeiraCarga = true; let vendasConcluidas = []; let paginaAtualVendas = 1; const itensPorPagina = 10;
+
+// MUDANÇA: A FUNÇÃO QUE ALTERNA O PAGAMENTO NO FIREBASE
+window.alternarPagamento = async function(idPedido, statusAtual) { 
+    try { 
+        await updateDoc(doc(db, "pedidos", idPedido), { pago: !statusAtual }); 
+    } catch (erro) { 
+        alert("Erro ao atualizar o status de pagamento."); 
+    } 
+}
+
 onSnapshot(collection(db, "pedidos"), (snapshot) => {
     snapshot.docChanges().forEach((change) => { if (change.type === "added" && !primeiraCarga) { if (change.doc.data().status === 'novo') { tocarSomNotificacao(); if (viewAtual !== 'pedidos') badgePedidos.style.display = 'flex'; } } });
     primeiraCarga = false; 
@@ -53,27 +63,46 @@ onSnapshot(collection(db, "pedidos"), (snapshot) => {
         const pedido = documento.data(); const idPedido = documento.id; 
         if (pedido.status === 'pronto' || pedido.status === 'arquivado') { faturamentoTotal += pedido.total_pedido; totalVendas++; vendasConcluidas.push(pedido); pedido.itens.forEach(item => { contagemProdutos[item.nome] = (contagemProdutos[item.nome] || 0) + item.quantidade; }); }
         if (pedido.status === 'arquivado') return;
+        
         let itensHtml = ''; pedido.itens.forEach(item => { let obsHtml = item.observacao ? `<span class="obs">Obs: ${item.observacao}</span>` : ''; itensHtml += `<li>${item.quantidade}x ${item.nome} ${obsHtml}</li>`; });
         let btnAcao = '';
         if (pedido.status === 'novo') { btnAcao = `<button class="btn-action btn-start" onclick="atualizarStatus('${idPedido}', 'preparo')">Começar Preparo</button>`; qtdNovos++; }
         else if (pedido.status === 'preparo') { btnAcao = `<button class="btn-action btn-finish" onclick="atualizarStatus('${idPedido}', 'pronto')">Marcar como Pronto</button>`; qtdPreparo++; }
         else if (pedido.status === 'pronto') { btnAcao = `<button class="btn-action btn-archive" onclick="atualizarStatus('${idPedido}', 'arquivado')"><i class="fa-solid fa-check"></i> Entregue (Arquivar)</button>`; qtdPronto++; }
         
-        // MUDANÇA: Ícones dinâmicos incluindo MESA
         let deliveryBadge = '';
-        if (pedido.tipo_entrega === 'Delivery') {
-            deliveryBadge = `<span style="background:#E9C46A; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-motorcycle"></i> Delivery</span>`;
-        } else if (pedido.tipo_entrega === 'Mesa') {
-            deliveryBadge = `<span style="background:#219EBC; color:#fff; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-utensils"></i> Mesa</span>`;
-        } else {
-            deliveryBadge = `<span style="background:#E5E4DE; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-person-walking"></i> Retirada</span>`;
-        }
+        if (pedido.tipo_entrega === 'Delivery') { deliveryBadge = `<span style="background:#E9C46A; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-motorcycle"></i> Delivery</span>`; } 
+        else if (pedido.tipo_entrega === 'Mesa') { deliveryBadge = `<span style="background:#219EBC; color:#fff; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-utensils"></i> Mesa</span>`; } 
+        else { deliveryBadge = `<span style="background:#E5E4DE; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-person-walking"></i> Retirada</span>`; }
 
         let enderecoHtml = ''; 
         if (pedido.tipo_entrega === 'Delivery' && pedido.endereco_entrega) { enderecoHtml = `<div style="font-size:12px; margin-bottom:10px; background:#FFF5F5; padding:8px; border-radius:6px; border:1px solid #E26D5C;"><strong><i class="fa-solid fa-location-dot" style="color:var(--color-new)"></i> Endereço:</strong> ${pedido.endereco_entrega}</div>`; }
         if (pedido.tipo_entrega === 'Mesa' && pedido.endereco_entrega) { enderecoHtml = `<div style="font-size:12px; margin-bottom:10px; background:#E8F5E9; padding:8px; border-radius:6px; border:1px solid #4CAF50;"><strong><i class="fa-solid fa-bell-concierge" style="color:#219EBC"></i> Local:</strong> ${pedido.endereco_entrega}</div>`; }
 
-        const cartaoHtml = `<div class="order-card ${pedido.status}"><div class="order-header"><span class="order-client"><i class="fa-solid fa-user" style="color: var(--primary-green); margin-right: 5px;"></i> ${pedido.cliente} ${deliveryBadge}</span><span class="order-time"><i class="fa-regular fa-clock" style="margin-right: 5px;"></i> ${formatarDataHora(pedido.data_hora).split(' às ')[1]}</span></div>${enderecoHtml}<ul class="order-items">${itensHtml}</ul><div class="order-footer"><span class="order-total">${formatarMoeda(pedido.total_pedido)}</span><span class="order-payment"><i class="fa-regular fa-credit-card" style="margin-right: 4px;"></i> ${pedido.pagamento}</span></div>${btnAcao}</div>`;
+        // MUDANÇA: GERA O BOTÃO DISJUNTOR DE PAGAMENTO
+        let isPago = pedido.pago || false;
+        let btnPagoHtml = isPago 
+            ? `<button class="btn-pago-toggle paid" onclick="alternarPagamento('${idPedido}', true)"><i class="fa-solid fa-check-double"></i> PAGO</button>`
+            : `<button class="btn-pago-toggle unpaid" onclick="alternarPagamento('${idPedido}', false)"><i class="fa-solid fa-circle-exclamation"></i> PENDENTE</button>`;
+
+        const cartaoHtml = `
+            <div class="order-card ${pedido.status}">
+                <div class="order-header">
+                    <span class="order-client"><i class="fa-solid fa-user" style="color: var(--primary-green); margin-right: 5px;"></i> ${pedido.cliente} ${deliveryBadge}</span>
+                    <span class="order-time"><i class="fa-regular fa-clock" style="margin-right: 5px;"></i> ${formatarDataHora(pedido.data_hora).split(' às ')[1]}</span>
+                </div>
+                ${enderecoHtml}
+                <ul class="order-items">${itensHtml}</ul>
+                <div class="order-footer">
+                    <span class="order-total">${formatarMoeda(pedido.total_pedido)}</span>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <span class="order-payment"><i class="fa-regular fa-credit-card" style="margin-right: 4px;"></i> ${pedido.pagamento}</span>
+                        ${btnPagoHtml}
+                    </div>
+                </div>
+                ${btnAcao}
+            </div>`;
+            
         if (pedido.status === 'novo') document.getElementById('lista-novos').innerHTML += cartaoHtml;
         if (pedido.status === 'preparo') document.getElementById('lista-preparo').innerHTML += cartaoHtml;
         if (pedido.status === 'pronto') document.getElementById('lista-pronto').innerHTML += cartaoHtml;
@@ -99,7 +128,6 @@ function renderizarPaginaVendas() {
     if (vendasConcluidas.length === 0) { lista.innerHTML = '<p style="color:var(--text-muted);">Nenhuma venda concluída ainda.</p>'; controles.innerHTML = ''; return; }
     const inicio = (paginaAtualVendas - 1) * itensPorPagina; const itensPagina = vendasConcluidas.slice(inicio, inicio + itensPorPagina); let htmlLista = '';
     itensPagina.forEach(pedido => {
-        
         let iconDelivery = '';
         if (pedido.tipo_entrega === 'Delivery') iconDelivery = '<i class="fa-solid fa-motorcycle"></i> Delivery';
         else if (pedido.tipo_entrega === 'Mesa') iconDelivery = '<i class="fa-solid fa-utensils"></i> Mesa';
