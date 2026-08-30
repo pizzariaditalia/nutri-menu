@@ -58,8 +58,21 @@ onSnapshot(collection(db, "pedidos"), (snapshot) => {
         if (pedido.status === 'novo') { btnAcao = `<button class="btn-action btn-start" onclick="atualizarStatus('${idPedido}', 'preparo')">Começar Preparo</button>`; qtdNovos++; }
         else if (pedido.status === 'preparo') { btnAcao = `<button class="btn-action btn-finish" onclick="atualizarStatus('${idPedido}', 'pronto')">Marcar como Pronto</button>`; qtdPreparo++; }
         else if (pedido.status === 'pronto') { btnAcao = `<button class="btn-action btn-archive" onclick="atualizarStatus('${idPedido}', 'arquivado')"><i class="fa-solid fa-check"></i> Entregue (Arquivar)</button>`; qtdPronto++; }
-        let deliveryBadge = pedido.tipo_entrega === 'Delivery' ? `<span style="background:#E9C46A; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-motorcycle"></i> Delivery</span>` : `<span style="background:#E5E4DE; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-person-walking"></i> Retirada</span>`;
-        let enderecoHtml = ''; if (pedido.tipo_entrega === 'Delivery' && pedido.endereco_entrega) { enderecoHtml = `<div style="font-size:12px; margin-bottom:10px; background:#FFF5F5; padding:8px; border-radius:6px; border:1px solid #E26D5C;"><strong><i class="fa-solid fa-location-dot" style="color:var(--color-new)"></i> Endereço:</strong> ${pedido.endereco_entrega}</div>`; }
+        
+        // MUDANÇA: Ícones dinâmicos incluindo MESA
+        let deliveryBadge = '';
+        if (pedido.tipo_entrega === 'Delivery') {
+            deliveryBadge = `<span style="background:#E9C46A; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-motorcycle"></i> Delivery</span>`;
+        } else if (pedido.tipo_entrega === 'Mesa') {
+            deliveryBadge = `<span style="background:#219EBC; color:#fff; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-utensils"></i> Mesa</span>`;
+        } else {
+            deliveryBadge = `<span style="background:#E5E4DE; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-person-walking"></i> Retirada</span>`;
+        }
+
+        let enderecoHtml = ''; 
+        if (pedido.tipo_entrega === 'Delivery' && pedido.endereco_entrega) { enderecoHtml = `<div style="font-size:12px; margin-bottom:10px; background:#FFF5F5; padding:8px; border-radius:6px; border:1px solid #E26D5C;"><strong><i class="fa-solid fa-location-dot" style="color:var(--color-new)"></i> Endereço:</strong> ${pedido.endereco_entrega}</div>`; }
+        if (pedido.tipo_entrega === 'Mesa' && pedido.endereco_entrega) { enderecoHtml = `<div style="font-size:12px; margin-bottom:10px; background:#E8F5E9; padding:8px; border-radius:6px; border:1px solid #4CAF50;"><strong><i class="fa-solid fa-bell-concierge" style="color:#219EBC"></i> Local:</strong> ${pedido.endereco_entrega}</div>`; }
+
         const cartaoHtml = `<div class="order-card ${pedido.status}"><div class="order-header"><span class="order-client"><i class="fa-solid fa-user" style="color: var(--primary-green); margin-right: 5px;"></i> ${pedido.cliente} ${deliveryBadge}</span><span class="order-time"><i class="fa-regular fa-clock" style="margin-right: 5px;"></i> ${formatarDataHora(pedido.data_hora).split(' às ')[1]}</span></div>${enderecoHtml}<ul class="order-items">${itensHtml}</ul><div class="order-footer"><span class="order-total">${formatarMoeda(pedido.total_pedido)}</span><span class="order-payment"><i class="fa-regular fa-credit-card" style="margin-right: 4px;"></i> ${pedido.pagamento}</span></div>${btnAcao}</div>`;
         if (pedido.status === 'novo') document.getElementById('lista-novos').innerHTML += cartaoHtml;
         if (pedido.status === 'preparo') document.getElementById('lista-preparo').innerHTML += cartaoHtml;
@@ -80,12 +93,18 @@ onSnapshot(collection(db, "pedidos"), (snapshot) => {
 
 window.atualizarStatus = async function(idPedido, novoStatus) { try { await updateDoc(doc(db, "pedidos", idPedido), { status: novoStatus }); } catch (erro) { alert("Erro ao atualizar."); } }
 window.mudarPaginaVendas = function(novaPagina) { paginaAtualVendas = novaPagina; renderizarPaginaVendas(); }
+
 function renderizarPaginaVendas() {
     const lista = document.getElementById('lista-vendas-concluidas'); const controles = document.getElementById('pagination-controls');
     if (vendasConcluidas.length === 0) { lista.innerHTML = '<p style="color:var(--text-muted);">Nenhuma venda concluída ainda.</p>'; controles.innerHTML = ''; return; }
     const inicio = (paginaAtualVendas - 1) * itensPorPagina; const itensPagina = vendasConcluidas.slice(inicio, inicio + itensPorPagina); let htmlLista = '';
     itensPagina.forEach(pedido => {
-        let iconDelivery = pedido.tipo_entrega === 'Delivery' ? '<i class="fa-solid fa-motorcycle"></i> Delivery' : '<i class="fa-solid fa-person-walking"></i> Retirada';
+        
+        let iconDelivery = '';
+        if (pedido.tipo_entrega === 'Delivery') iconDelivery = '<i class="fa-solid fa-motorcycle"></i> Delivery';
+        else if (pedido.tipo_entrega === 'Mesa') iconDelivery = '<i class="fa-solid fa-utensils"></i> Mesa';
+        else iconDelivery = '<i class="fa-solid fa-person-walking"></i> Retirada';
+
         htmlLista += `<div class="sale-item"><div class="sale-info"><strong><i class="fa-solid fa-user" style="color: var(--primary-green); margin-right: 5px;"></i> ${pedido.cliente}</strong><div class="sale-details"><span><i class="fa-regular fa-clock" style="margin-right: 4px;"></i> ${formatarDataHora(pedido.data_hora)}</span><span>${iconDelivery} • <i class="fa-regular fa-credit-card" style="margin: 0 4px 0 4px;"></i> ${pedido.pagamento.toUpperCase()}</span></div></div><div class="sale-value">+ ${formatarMoeda(pedido.total_pedido)}</div></div>`;
     });
     lista.innerHTML = htmlLista;
@@ -247,40 +266,10 @@ const docConfigRef = doc(db, "loja", "configuracoes");
 onSnapshot(docConfigRef, (docSnap) => {
     if(docSnap.exists()) {
         const config = docSnap.data();
-        document.getElementById('conf-status').checked = config.status_loja; 
-        document.getElementById('conf-delivery-status').checked = config.delivery_status || false; 
-        document.getElementById('conf-delivery-fee').value = config.delivery_fee || ""; 
-        document.getElementById('conf-delivery-time').value = config.delivery_time || ""; 
-        
-        // MUDANÇA: Lê a chave PIX salva
-        document.getElementById('conf-chave-pix').value = config.chave_pix || ""; 
-
-        document.getElementById('conf-nome').value = config.nome_loja || ""; 
-        document.getElementById('conf-frase').value = config.frase_efeito || ""; 
-        document.getElementById('conf-telefone').value = config.telefone || ""; 
-        document.getElementById('conf-endereco').value = config.endereco || ""; 
-        document.getElementById('conf-instagram').value = config.instagram || ""; 
-        document.getElementById('conf-facebook').value = config.facebook || ""; 
-        document.getElementById('conf-hr-semana').value = config.hr_semana || ""; 
-        document.getElementById('conf-hr-sabado').value = config.hr_sabado || ""; 
-        document.getElementById('conf-hr-domingo').value = config.hr_domingo || "";
+        document.getElementById('conf-status').checked = config.status_loja; document.getElementById('conf-delivery-status').checked = config.delivery_status || false; document.getElementById('conf-delivery-time').value = config.delivery_time || ""; document.getElementById('conf-chave-pix').value = config.chave_pix || ""; document.getElementById('conf-nome').value = config.nome_loja || ""; document.getElementById('conf-frase').value = config.frase_efeito || ""; document.getElementById('conf-telefone').value = config.telefone || ""; document.getElementById('conf-endereco').value = config.endereco || ""; document.getElementById('conf-instagram').value = config.instagram || ""; document.getElementById('conf-facebook').value = config.facebook || ""; document.getElementById('conf-hr-semana').value = config.hr_semana || ""; document.getElementById('conf-hr-sabado').value = config.hr_sabado || ""; document.getElementById('conf-hr-domingo').value = config.hr_domingo || "";
     }
 });
 window.salvarConfiguracoes = async function() {
-    const dadosConfig = { 
-        status_loja: document.getElementById('conf-status').checked, 
-        delivery_status: document.getElementById('conf-delivery-status').checked, 
-        delivery_time: document.getElementById('conf-delivery-time').value, 
-        chave_pix: document.getElementById('conf-chave-pix').value, // MUDANÇA: Salva a Chave PIX
-        nome_loja: document.getElementById('conf-nome').value, 
-        frase_efeito: document.getElementById('conf-frase').value, 
-        telefone: document.getElementById('conf-telefone').value, 
-        endereco: document.getElementById('conf-endereco').value, 
-        instagram: document.getElementById('conf-instagram').value, 
-        facebook: document.getElementById('conf-facebook').value, 
-        hr_semana: document.getElementById('conf-hr-semana').value, 
-        hr_sabado: document.getElementById('conf-hr-sabado').value, 
-        hr_domingo: document.getElementById('conf-hr-domingo').value 
-    };
+    const dadosConfig = { status_loja: document.getElementById('conf-status').checked, delivery_status: document.getElementById('conf-delivery-status').checked, delivery_time: document.getElementById('conf-delivery-time').value, chave_pix: document.getElementById('conf-chave-pix').value, nome_loja: document.getElementById('conf-nome').value, frase_efeito: document.getElementById('conf-frase').value, telefone: document.getElementById('conf-telefone').value, endereco: document.getElementById('conf-endereco').value, instagram: document.getElementById('conf-instagram').value, facebook: document.getElementById('conf-facebook').value, hr_semana: document.getElementById('conf-hr-semana').value, hr_sabado: document.getElementById('conf-hr-sabado').value, hr_domingo: document.getElementById('conf-hr-domingo').value };
     try { await setDoc(docConfigRef, dadosConfig, {merge: true}); alert("Configurações salvas e aplicadas no site em tempo real!"); } catch (e) { alert("Erro ao salvar configurações."); }
 }
