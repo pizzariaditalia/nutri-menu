@@ -15,14 +15,14 @@ const db = getFirestore(app);
 
 let viewAtual = 'pedidos'; 
 const badgePedidos = document.getElementById('badge-pedidos');
-const badgeAvaliacoes = document.getElementById('badge-avaliacoes'); // Aviso de Avaliação nova
+const badgeAvaliacoes = document.getElementById('badge-avaliacoes'); 
 
 function esconderTodasViews() {
     document.getElementById('view-pedidos').style.display = 'none';
     document.getElementById('view-cardapio').style.display = 'none';
     document.getElementById('view-taxas').style.display = 'none';
     document.getElementById('view-promocoes').style.display = 'none';
-    document.getElementById('view-avaliacoes').style.display = 'none'; // MUDANÇA
+    document.getElementById('view-avaliacoes').style.display = 'none'; 
     document.getElementById('view-relatorios').style.display = 'none';
     document.getElementById('view-config').style.display = 'none';
     document.querySelectorAll('.sidebar-nav .nav-item').forEach(btn => btn.classList.remove('active'));
@@ -33,7 +33,6 @@ document.getElementById('menu-cardapio').addEventListener('click', (e) => { e.pr
 document.getElementById('menu-taxas').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'taxas'; esconderTodasViews(); document.getElementById('view-taxas').style.display = 'flex'; document.getElementById('menu-taxas').classList.add('active'); document.getElementById('header-title').innerText = "Taxas de Entrega"; });
 document.getElementById('menu-promocoes').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'promocoes'; esconderTodasViews(); document.getElementById('view-promocoes').style.display = 'flex'; document.getElementById('menu-promocoes').classList.add('active'); document.getElementById('header-title').innerText = "Cupons e Promoções"; });
 
-// MUDANÇA: Aba de Avaliações
 document.getElementById('menu-avaliacoes').addEventListener('click', (e) => { 
     e.preventDefault(); viewAtual = 'avaliacoes'; esconderTodasViews(); 
     document.getElementById('view-avaliacoes').style.display = 'flex'; 
@@ -51,9 +50,6 @@ function formatarMoeda(valor) { return Number(valor).toLocaleString('pt-BR', { s
 function formatarDataHora(dataString) { const data = new Date(dataString); return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
 function tocarSomNotificacao() { const audio = new Audio('assets/audio/notificacao.mp3'); audio.onerror = () => { audio.src = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg'; audio.play().catch(e=>e); }; audio.play().catch(e=>e); }
 
-// ==============================
-// KANBAN E RELATÓRIOS
-// ==============================
 let primeiraCarga = true; let vendasConcluidas = []; let paginaAtualVendas = 1; const itensPorPagina = 10;
 onSnapshot(collection(db, "pedidos"), (snapshot) => {
     snapshot.docChanges().forEach((change) => { if (change.type === "added" && !primeiraCarga) { if (change.doc.data().status === 'novo') { tocarSomNotificacao(); if (viewAtual !== 'pedidos') badgePedidos.style.display = 'flex'; } } });
@@ -109,9 +105,8 @@ function renderizarPaginaVendas() {
 const tabBtns = document.querySelectorAll('.tab-btn'); const kanbanCols = document.querySelectorAll('.kanban-column');
 tabBtns.forEach(btn => { btn.addEventListener('click', () => { tabBtns.forEach(b => b.classList.remove('active')); kanbanCols.forEach(c => c.classList.remove('active-mobile')); btn.classList.add('active'); document.getElementById(btn.getAttribute('data-target')).classList.add('active-mobile'); }); });
 
-
 // ==============================
-// MUDANÇA: MODERAÇÃO DE AVALIAÇÕES
+// MODERAÇÃO DE AVALIAÇÕES
 // ==============================
 let avaliacoes = [];
 let primeiraCargaAval = true;
@@ -119,7 +114,6 @@ let primeiraCargaAval = true;
 onSnapshot(collection(db, "avaliacoes"), (snapshot) => {
     avaliacoes = [];
     
-    // Toca som se chegar avaliação nova (pendente)
     snapshot.docChanges().forEach((change) => { 
         if (change.type === "added" && !primeiraCargaAval) { 
             if (change.doc.data().status === 'pendente') { 
@@ -131,8 +125,6 @@ onSnapshot(collection(db, "avaliacoes"), (snapshot) => {
     primeiraCargaAval = false;
 
     snapshot.forEach(doc => avaliacoes.push({ id: doc.id, ...doc.data() })); 
-    
-    // Ordena da mais nova pra mais antiga
     avaliacoes.sort((a, b) => new Date(b.data_hora) - new Date(a.data_hora));
     renderizarAvaliacoes();
 });
@@ -188,7 +180,7 @@ window.excluirAvaliacao = async function(id) {
 
 
 // ==============================
-// GESTÃO DO CARDÁPIO, TAXAS E PROMOÇÕES (INALTERADOS)
+// GESTÃO DO CARDÁPIO E OUTROS
 // ==============================
 let categorias = []; let produtos = [];
 onSnapshot(collection(db, "categorias"), (snapshot) => { categorias = []; snapshot.forEach(doc => categorias.push({ id: doc.id, ...doc.data() })); renderizarCardapioAdmin(); });
