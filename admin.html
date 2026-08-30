@@ -43,7 +43,6 @@
                     <span class="icon"><i class="fa-solid fa-ticket"></i></span>
                     <span class="nav-text">Promoções</span>
                 </a>
-                <!-- MUDANÇA: Aba de Avaliações -->
                 <a href="#" class="nav-item" id="menu-avaliacoes">
                     <div style="position: relative;">
                         <span class="icon"><i class="fa-solid fa-star"></i></span>
@@ -128,25 +127,17 @@
                 </div>
             </div>
 
-            <!-- MUDANÇA: View de Avaliações -->
             <div id="view-avaliacoes" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
-                
                 <div class="config-section" style="margin-bottom: 25px; border-left: 5px solid var(--color-new);">
                     <h3>Pendentes de Aprovação</h3>
                     <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Avaliações novas que os clientes enviaram. Elas não aparecem no site até você clicar em Aprovar.</p>
-                    <div id="lista-avaliacoes-pendentes" class="prod-list">
-                        <p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação pendente.</p>
-                    </div>
+                    <div id="lista-avaliacoes-pendentes" class="prod-list"><p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação pendente.</p></div>
                 </div>
-
                 <div class="config-section" style="border-left: 5px solid var(--color-ready);">
                     <h3>Aprovadas (Visíveis no site)</h3>
                     <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Estas são as avaliações que já estão no seu Mural para todos verem.</p>
-                    <div id="lista-avaliacoes-aprovadas" class="prod-list">
-                        <p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação aprovada.</p>
-                    </div>
+                    <div id="lista-avaliacoes-aprovadas" class="prod-list"><p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação aprovada.</p></div>
                 </div>
-
             </div>
 
             <div id="view-relatorios" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
@@ -170,14 +161,21 @@
                         <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Ao desligar, os clientes verão o cardápio mas não poderão finalizar nenhum pedido.</p>
                         <div class="toggle-container"><span style="font-weight: bold; color: var(--text-dark);">Loja Aberta?</span><label class="switch"><input type="checkbox" id="conf-status" checked><span class="slider round"></span></label></div>
                     </div>
+                    
                     <div class="config-section" style="margin-top: 25px;">
-                        <h3>Sistema de Delivery</h3>
+                        <h3>Sistema de Delivery e Pagamento</h3>
                         <div class="toggle-container" style="margin-bottom: 15px;"><span style="font-weight: bold; color: var(--text-dark);">Habilitar Delivery?</span><label class="switch"><input type="checkbox" id="conf-delivery-status" checked><span class="slider round"></span></label></div>
-                        <div style="display: flex; gap: 15px;">
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
                             <div class="form-group" style="flex: 1;"><label>Taxa de Entrega Fixa (R$)</label><input type="number" id="conf-delivery-fee" placeholder="Ex: 5.00" step="0.01"></div>
                             <div class="form-group" style="flex: 1;"><label>Tempo de Entrega</label><input type="text" id="conf-delivery-time" placeholder="Ex: 40-60 min"></div>
                         </div>
+                        <!-- MUDANÇA: Campo da Chave PIX -->
+                        <div class="form-group">
+                            <label>Sua Chave PIX (Para pagamento online)</label>
+                            <input type="text" id="conf-chave-pix" placeholder="Ex: 12999999999 ou seunome@email.com">
+                        </div>
                     </div>
+
                     <div class="config-section" style="margin-top: 25px;">
                         <h3>Informações do Cabeçalho</h3>
                         <div class="form-group"><label>Nome do Estabelecimento</label><input type="text" id="conf-nome" placeholder="Ex: Nutri Life"></div>
@@ -204,7 +202,7 @@
         </div>
     </div>
 
-    <!-- Modais Genéricos (Cardápio, Taxa, Promo) -->
+    <!-- Modais Genéricos -->
     <div class="modal-overlay" id="modal-categoria"><div class="modal-content"><button class="close-modal" onclick="fecharModalCategoria()"><i class="fa-solid fa-xmark"></i></button><div class="modal-body"><h2 class="modal-title" id="titulo-modal-categoria">Nova Categoria</h2><input type="hidden" id="cat-id"><div class="form-group"><label>Nome da Categoria</label><input type="text" id="cat-nome"></div><div class="form-group"><label>Descrição (Opcional)</label><input type="text" id="cat-desc"></div></div><div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarCategoria()">Salvar</button></div></div></div>
     
     <div class="modal-overlay" id="modal-produto"><div class="modal-content" style="max-height: 90vh;"><button class="close-modal" onclick="fecharModalProduto()"><i class="fa-solid fa-xmark"></i></button><div class="modal-body"><h2 class="modal-title" id="titulo-modal-produto">Novo Produto</h2><input type="hidden" id="prod-id"><div class="form-group"><label>Categoria</label><select id="prod-categoria"></select></div><div class="form-group"><label>Nome</label><input type="text" id="prod-nome"></div><div class="form-group"><label>Descrição</label><textarea id="prod-desc" rows="2"></textarea></div><div style="display: flex; gap: 10px;"><div class="form-group" style="flex: 1;"><label>Preço</label><input type="number" id="prod-preco" step="0.01"></div><div class="form-group" style="flex: 1;"><label>Botão</label><input type="text" id="prod-btn" value="Adicionar"></div></div><div class="form-group"><label>Tags (vírgula)</label><input type="text" id="prod-tags"></div><div class="form-group"><label>Opções Obrigatórias</label><input type="text" id="prod-opcoes" placeholder="Ex: Frango, Queijo (Vazio = Normal)"></div><div class="form-group"><label>Imagem</label><input type="file" id="prod-img-file" accept="image/*" style="width: 100%;"><input type="hidden" id="prod-img-url"><div style="text-align: center; background: #f8f8f8; border-radius: 8px; padding: 10px; margin-top:10px;"><img id="prod-img-preview" src="" style="max-height: 120px; object-fit: contain; display: none; margin: 0 auto;"><span id="prod-img-placeholder" style="font-size: 12px;">Sem imagem</span></div></div></div><div class="modal-footer"><button class="btn-action btn-finish" id="btn-salvar-produto" onclick="salvarProduto()">Salvar</button></div></div></div>
@@ -213,6 +211,7 @@
     
     <div class="modal-overlay" id="modal-promocao"><div class="modal-content"><button class="close-modal" onclick="fecharModalPromocao()"><i class="fa-solid fa-xmark"></i></button><div class="modal-body"><h2 class="modal-title" id="titulo-modal-promocao">Novo Cupom</h2><input type="hidden" id="promo-id"><div class="form-group"><label>Código</label><input type="text" id="promo-codigo" style="text-transform: uppercase;"></div><div style="display: flex; gap: 10px;"><div class="form-group" style="flex: 1;"><label>Tipo</label><select id="promo-tipo"><option value="porcentagem">Porcentagem (%)</option><option value="fixo">Valor Fixo (R$)</option></select></div><div class="form-group" style="flex: 1;"><label>Valor</label><input type="number" id="promo-valor" step="0.01"></div></div><div class="toggle-container" style="padding: 10px; margin-top: 10px;"><span>Ativo?</span><label class="switch"><input type="checkbox" id="promo-ativo" checked><span class="slider round"></span></label></div></div><div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarPromocao()">Salvar</button></div></div></div>
 
-    <script type="module" src="js/admin.js?v=3"></script>
+    <!-- Script com versão de cache -->
+    <script type="module" src="js/admin.js?v=4"></script>
 </body>
 </html>
