@@ -38,7 +38,7 @@ function escutarStatusPedido(idPedido) {
             const widget = document.getElementById('order-status-widget'); const icon = document.getElementById('order-status-icon'); const text = document.getElementById('order-status-text');
             widget.style.display = 'flex';
             if (pedido.status === 'novo') { widget.style.borderLeftColor = 'var(--color-new)'; icon.innerHTML = '🕒'; text.innerText = 'Recebido (Aguardando)'; } 
-            else if (pedido.status === 'preparo') { widget.style.borderLeftColor = 'var(--color-prep)'; icon.innerHTML = '🍳'; text.innerText = 'Em Preparo na Cozinha'; } 
+            else if (pedido.status === 'preparo') { widget.style.borderLeftColor = 'var(--color-prep)'; icon.innerHTML = '🍴'; text.innerText = 'Em Preparo na Cozinha'; } 
             else if (pedido.status === 'pronto') { widget.style.borderLeftColor = 'var(--color-ready)'; icon.innerHTML = pedido.tipo_entrega === 'Delivery' ? '🛵' : '🛍️'; text.innerText = pedido.tipo_entrega === 'Delivery' ? 'Saiu para Entrega!' : 'Pronto para Retirada!'; } 
             else if (pedido.status === 'arquivado') { widget.style.borderLeftColor = 'var(--text-muted)'; icon.innerHTML = '✅'; text.innerText = 'Pedido Finalizado!'; setTimeout(() => { widget.style.display = 'none'; localStorage.removeItem('meuPedidoNutriLife'); }, 5000); }
         }
@@ -281,7 +281,7 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
     try {
         const docRef = await addDoc(collection(db, "pedidos"), pedidoFinal); localStorage.setItem('meuPedidoNutriLife', docRef.id); escutarStatusPedido(docRef.id);
 
-        let textoWhats = `*NOVO PEDIDO!* 🍔\n*Cliente:* ${nome}\n*Entrega:* ${tipoEntrega}\n`;
+        let textoWhats = `*NOVO PEDIDO!* \n*Cliente:* ${nome}\n*Pedido:* ${tipoEntrega}\n`;
         if (tipoEntrega === 'Delivery' || tipoEntrega === 'Mesa') textoWhats += `*Local:* ${enderecoFinal}\n`;
         textoWhats += `\n*RESUMO:*\n`;
         carrinho.forEach(item => { textoWhats += `${item.quantidade}x ${item.nome} - ${formatarMoeda(item.total)}\n`; if(item.observacao) textoWhats += `   _Obs: ${item.observacao}_\n`; });
