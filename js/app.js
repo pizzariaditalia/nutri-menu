@@ -25,7 +25,9 @@ if (hoursToggle) {
 
 let lojaAberta = true; 
 let configDelivery = { habilitado: false };
-let taxasDisponiveis = []; let promocoesDisponiveis = []; let cupomAtivo = null; let lojaTelefone = ''; 
+let taxasDisponiveis = []; let promocoesDisponiveis = []; let cupomAtivo = null; 
+let lojaTelefone = ''; 
+let chavePixLoja = ''; // Nova variável
 
 let unsubscribePedido = null;
 window.fecharStatusWidget = function() { document.getElementById('order-status-widget').style.display = 'none'; }
@@ -51,15 +53,23 @@ onSnapshot(doc(db, "loja", "configuracoes"), (docSnap) => {
     if (docSnap.exists()) {
         const config = docSnap.data();
         lojaAberta = config.status_loja !== false; configDelivery.habilitado = (config.delivery_status === true); configDelivery.taxa = parseFloat(config.delivery_fee) || 0;
+        
+        // Pega a chave PIX salva
+        chavePixLoja = config.chave_pix || "";
+        document.getElementById('chave-pix-texto').innerText = chavePixLoja;
+
         const optDelivery = document.getElementById('opt-delivery'); const deliveryInfoText = document.getElementById('store-delivery-info');
         if (configDelivery.habilitado) { optDelivery.style.display = 'block'; let tempoStr = config.delivery_time ? config.delivery_time : "Disponível"; deliveryInfoText.innerHTML = `${tempoStr} <span style="font-size:10px; display:block; color:var(--primary-green)">A partir do bairro</span>`; } 
-        else { optDelivery.style.display = 'none'; document.getElementById('tipo-entrega').value = 'Retirada'; toggleEndereco(); deliveryInfoText.innerText = "Indisponível"; }
+        else { optDelivery.style.display = 'none'; document.getElementById('tipo-entrega').value = 'Retirada'; verificarRegrasCheckout(); deliveryInfoText.innerText = "Indisponível"; }
+        
         if(config.nome_loja) document.getElementById('store-brand-title').innerText = config.nome_loja; if(config.frase_efeito) document.getElementById('store-quote').innerText = `"${config.frase_efeito}"`; if(config.endereco) document.getElementById('store-address').innerText = config.endereco;
+        
         const linkZap = document.getElementById('link-whatsapp');
         if(config.telefone && config.telefone.trim() !== '') { lojaTelefone = config.telefone.replace(/\D/g,''); linkZap.href = `https://wa.me/55${lojaTelefone}`; linkZap.style.display = 'flex'; } else { lojaTelefone = ''; linkZap.style.display = 'none'; }
+        
         const linkInsta = document.getElementById('link-instagram'); if(config.instagram && config.instagram.trim() !== '') { linkInsta.href = config.instagram; linkInsta.style.display = 'flex'; } else { linkInsta.style.display = 'none'; }
         const linkFace = document.getElementById('link-facebook'); if(config.facebook && config.facebook.trim() !== '') { linkFace.href = config.facebook; linkFace.style.display = 'flex'; } else { linkFace.style.display = 'none'; }
-        if(config.pedido_minimo && config.pedido_minimo.trim() !== '') { document.getElementById('store-min-order').innerText = config.pedido_minimo; } else { document.getElementById('store-min-order').innerText = "Não há"; }
+        
         if(config.hr_semana) document.getElementById('hours-weekday').innerText = config.hr_semana; if(config.hr_sabado) document.getElementById('hours-saturday').innerText = config.hr_sabado; if(config.hr_domingo) document.getElementById('hours-sunday').innerText = config.hr_domingo;
         const bannerFechado = document.getElementById('loja-fechada-banner'); if (!lojaAberta) { bannerFechado.style.display = 'block'; } else { bannerFechado.style.display = 'none'; }
     }
@@ -86,7 +96,6 @@ function montarCardapio() {
     cardapioOficial = categoriasDb.map(cat => { return { id_categoria: cat.id, categoria: cat.nome, descricao: cat.descricao || "", produtos: produtosDb.filter(p => p.categoria_id === cat.id) }; }).filter(cat => cat.produtos.length > 0); 
     renderizarCardapio(cardapioOficial); renderizarNavegacao(cardapioOficial);
 }
-
 function formatarMoeda(valor) { return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function renderizarNavegacao(dados) { navCategorias.innerHTML = ''; dados.forEach((secao, index) => { const activeClass = index === 0 ? 'active' : ''; navCategorias.innerHTML += `<button class="nav-item ${activeClass}" onclick="scrollToCategory('${secao.id_categoria}', this)">${secao.categoria}</button>`; }); }
 
@@ -111,67 +120,30 @@ inputBusca.addEventListener('input', (evento) => {
     renderizarCardapio(cardapioFiltrado);
 });
 
-// ==========================================
-// MUDANÇA: MURAL DE AVALIAÇÕES (CLIENTE)
-// ==========================================
+// AVALIAÇÕES MURAL
 const avalCarousel = document.getElementById('reviews-carousel');
-
-// Escuta as avaliações no banco de dados e só exibe as "aprovadas"
 onSnapshot(collection(db, "avaliacoes"), (snapshot) => {
-    let htmlAvals = '';
-    let temAvaliacao = false;
-
+    let htmlAvals = ''; let temAvaliacao = false;
     snapshot.forEach(docSnap => {
         const aval = docSnap.data();
         if (aval.status === 'aprovado') {
-            temAvaliacao = true;
-            let estrelasHtml = '⭐'.repeat(aval.nota);
-            let imgHtml = aval.imagem ? `<img src="${aval.imagem}" class="review-img">` : '';
-            
-            htmlAvals += `
-                <div class="review-card">
-                    <div class="review-top">
-                        <span class="review-name"><i class="fa-solid fa-user-circle" style="color:var(--primary-green); margin-right:5px;"></i>${aval.nome}</span>
-                        <span class="review-stars">${estrelasHtml}</span>
-                    </div>
-                    <p class="review-text">"${aval.comentario}"</p>
-                    ${imgHtml}
-                </div>
-            `;
+            temAvaliacao = true; let estrelasHtml = '⭐'.repeat(aval.nota); let imgHtml = aval.imagem ? `<img src="${aval.imagem}" class="review-img">` : '';
+            htmlAvals += `<div class="review-card"><div class="review-top"><span class="review-name"><i class="fa-solid fa-user-circle" style="color:var(--primary-green); margin-right:5px;"></i>${aval.nome}</span><span class="review-stars">${estrelasHtml}</span></div><p class="review-text">"${aval.comentario}"</p>${imgHtml}</div>`;
         }
     });
-
-    if (temAvaliacao) {
-        avalCarousel.innerHTML = htmlAvals;
-    } else {
-        avalCarousel.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); padding: 0 20px;">Seja o primeiro a deixar uma foto e avaliação do seu pedido!</p>';
-    }
+    if (temAvaliacao) avalCarousel.innerHTML = htmlAvals; 
+    else avalCarousel.innerHTML = '<p style="font-size: 13px; color: var(--text-muted); padding: 0 20px;">Seja o primeiro a deixar uma foto e avaliação do seu pedido!</p>';
 });
 
-// Lógica de abrir o modal de avaliação
-const modalAvaliacao = document.getElementById('avaliacao-modal');
-const fileInputAval = document.getElementById('aval-img-file');
-const previewImgAval = document.getElementById('aval-img-preview');
-
-window.abrirModalAvaliacao = function() {
-    document.getElementById('aval-nome').value = ''; document.getElementById('aval-texto').value = ''; document.getElementById('aval-img-base64').value = '';
-    fileInputAval.value = ''; previewImgAval.style.display = 'none';
-    document.body.style.overflow = 'hidden';
-    modalAvaliacao.classList.add('active');
-}
-
-window.fecharModalAvaliacao = function() {
-    modalAvaliacao.classList.remove('active'); document.body.style.overflow = '';
-}
-
-// Câmera Mágica para espremer a foto da avaliação
+const modalAvaliacao = document.getElementById('avaliacao-modal'); const fileInputAval = document.getElementById('aval-img-file'); const previewImgAval = document.getElementById('aval-img-preview');
+window.abrirModalAvaliacao = function() { document.getElementById('aval-nome').value = ''; document.getElementById('aval-texto').value = ''; document.getElementById('aval-img-base64').value = ''; fileInputAval.value = ''; previewImgAval.style.display = 'none'; document.body.style.overflow = 'hidden'; modalAvaliacao.classList.add('active'); }
+window.fecharModalAvaliacao = function() { modalAvaliacao.classList.remove('active'); document.body.style.overflow = ''; }
 fileInputAval.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
+            const img = new Image(); img.onload = function() {
                 const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                 const MAX_WIDTH = 500; const MAX_HEIGHT = 500; let width = img.width; let height = img.height;
                 if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
@@ -184,34 +156,12 @@ fileInputAval.addEventListener('change', function(e) {
         reader.readAsDataURL(file);
     }
 });
-
 window.enviarAvaliacao = async function() {
-    const nome = document.getElementById('aval-nome').value;
-    const nota = parseInt(document.getElementById('aval-nota').value);
-    const texto = document.getElementById('aval-texto').value;
-    const imagem = document.getElementById('aval-img-base64').value;
-
+    const nome = document.getElementById('aval-nome').value; const nota = parseInt(document.getElementById('aval-nota').value); const texto = document.getElementById('aval-texto').value; const imagem = document.getElementById('aval-img-base64').value;
     if(!nome || !texto) return mostrarAlerta("Por favor, preencha seu nome e um comentário.");
-
-    const btnEnviar = document.getElementById('btn-enviar-avaliacao');
-    const txtOriginal = btnEnviar.innerText; btnEnviar.innerText = "Enviando..."; btnEnviar.disabled = true;
-
-    try {
-        await addDoc(collection(db, "avaliacoes"), {
-            nome: nome, nota: nota, comentario: texto, imagem: imagem,
-            data_hora: new Date().toISOString(),
-            status: "pendente" // Cai no seu painel para aprovar!
-        });
-        fecharModalAvaliacao();
-        mostrarAlerta("Muito obrigado! Sua avaliação foi enviada e em breve aparecerá no nosso mural. ❤️");
-    } catch (e) {
-        mostrarAlerta("Erro ao enviar avaliação. Tente novamente.");
-    } finally {
-        btnEnviar.innerText = txtOriginal; btnEnviar.disabled = false;
-    }
+    const btnEnviar = document.getElementById('btn-enviar-avaliacao'); const txtOriginal = btnEnviar.innerText; btnEnviar.innerText = "Enviando..."; btnEnviar.disabled = true;
+    try { await addDoc(collection(db, "avaliacoes"), { nome: nome, nota: nota, comentario: texto, imagem: imagem, data_hora: new Date().toISOString(), status: "pendente" }); fecharModalAvaliacao(); mostrarAlerta("Muito obrigado! Sua avaliação foi enviada e em breve aparecerá no nosso mural. ❤️"); } catch (e) { mostrarAlerta("Erro ao enviar avaliação. Tente novamente."); } finally { btnEnviar.innerText = txtOriginal; btnEnviar.disabled = false; }
 }
-// ==========================================
-
 
 let carrinho = []; let produtoAtual = null; let quantidadeAtual = 1;
 const modalProduto = document.getElementById('product-modal'); const btnCloseModalProduto = document.getElementById('close-modal'); const textoQuantidade = document.querySelector('.qty-number'); const textoTotalModal = document.getElementById('modal-total'); const campoObservacao = document.querySelector('.modal-options textarea');
@@ -265,15 +215,49 @@ window.aplicarCupom = function() {
     cupomAtivo = cupom; msg.innerText = "Cupom aplicado com sucesso!"; msg.style.color = "var(--color-ready)"; msg.style.display = "block"; renderizarItensCarrinho();
 }
 
-window.toggleEndereco = function() {
-    const tipo = document.getElementById('tipo-entrega').value; const box = document.getElementById('box-endereco'); const lblTaxa = document.getElementById('label-taxa');
-    if (tipo === 'Delivery') { box.style.display = 'block'; lblTaxa.style.display = 'inline'; } else { box.style.display = 'none'; lblTaxa.style.display = 'none'; }
+// MUDANÇA MÁGICA DO PIX AQUI
+window.verificarRegrasCheckout = function() {
+    const tipo = document.getElementById('tipo-entrega').value; 
+    const boxEnd = document.getElementById('box-endereco'); 
+    const lblTaxa = document.getElementById('label-taxa');
+    const pgto = document.getElementById('forma-pagamento').value;
+    const boxPix = document.getElementById('box-pix-antecipado');
+    const optPix = document.getElementById('opt-pgto-pix');
+    
+    // Regra 1: Mostrar ou Esconder Endereço
+    if (tipo === 'Delivery') { 
+        boxEnd.style.display = 'block'; 
+        lblTaxa.style.display = 'inline'; 
+        optPix.innerText = "Pix (Pagar agora)";
+    } else { 
+        boxEnd.style.display = 'none'; 
+        lblTaxa.style.display = 'none'; 
+        optPix.innerText = "Pix (Na retirada)";
+    }
+
+    // Regra 2: Mostrar a chave PIX se for Delivery E Pagamento via Pix
+    if (tipo === 'Delivery' && pgto === 'pix') {
+        boxPix.style.display = 'block';
+    } else {
+        boxPix.style.display = 'none';
+    }
+
     if (carrinho.length > 0) renderizarItensCarrinho();
+}
+window.toggleEndereco = window.verificarRegrasCheckout; // Para manter compatibilidade com o HTML antigo
+
+window.copiarPix = function() {
+    navigator.clipboard.writeText(chavePixLoja).then(() => {
+        mostrarAlerta("Chave PIX copiada para a área de transferência!");
+    });
 }
 
 document.querySelector('.btn-view-cart').addEventListener('click', () => {
     if (carrinho.length === 0) return mostrarAlerta("Seu carrinho está vazio!");
-    renderizarItensCarrinho(); document.body.style.overflow = 'hidden'; cartModal.classList.add('active');
+    verificarRegrasCheckout(); // Garante que a tela abra certinha
+    renderizarItensCarrinho(); 
+    document.body.style.overflow = 'hidden'; 
+    cartModal.classList.add('active');
 });
 
 btnCloseCart.addEventListener('click', () => { cartModal.classList.remove('active'); document.body.style.overflow = ''; });
@@ -356,6 +340,14 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
         if(descontoCobrado > 0) textoWhats += `*Desconto:* - ${formatarMoeda(descontoCobrado)} (${cupomNome})\n`;
         if(taxaCobrada > 0) textoWhats += `*Taxa:* ${formatarMoeda(taxaCobrada)}\n`;
         textoWhats += `*Total:* ${formatarMoeda(totalFinalCalculado)}\n\n*Pagamento:* ${pagamentoTexto}`;
+
+        // MUDANÇA MÁGICA: Se for Pix + Delivery, adiciona recado no WhatsApp!
+        if (tipoEntrega === 'Delivery' && pagamentoId === 'pix') {
+            textoWhats += `\n\n📌 _Segue o comprovante do PIX:_`;
+            document.getElementById('whatsapp-instrucao').innerText = "Seu pedido já está na nossa cozinha! Clique abaixo e nos envie a confirmação junto com o comprovante do PIX.";
+        } else {
+            document.getElementById('whatsapp-instrucao').innerText = "Seu pedido já está na nossa cozinha! Para agilizar o atendimento, clique abaixo e nos envie a confirmação no WhatsApp.";
+        }
 
         const encodedText = encodeURIComponent(textoWhats); const waLink = `https://wa.me/55${lojaTelefone}?text=${encodedText}`;
         document.getElementById('btn-enviar-whatsapp').onclick = () => { window.open(waLink, '_blank'); fecharLimparTudo(); };
