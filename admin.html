@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Nutri Life</title>
+    <script>
+        if (sessionStorage.getItem('adminLogado') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <div class="dashboard-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="assets/img/icon.png" alt="Logo Nutri Life">
+                <h1>Nutri Life</h1>
+                <p>Painel Admin</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" id="menu-pedidos">
+                    <div style="position: relative;">
+                        <span class="icon"><i class="fa-solid fa-table-columns"></i></span>
+                        <span class="nav-badge" id="badge-pedidos" style="display: none;">!</span>
+                    </div>
+                    <span class="nav-text">Painel de Pedidos</span>
+                </a>
+                <a href="#" class="nav-item" id="menu-cardapio">
+                    <span class="icon"><i class="fa-solid fa-clipboard-list"></i></span>
+                    <span class="nav-text">Meu Cardápio</span>
+                </a>
+                <!-- NOVOS MENUS AQUI -->
+                <a href="#" class="nav-item" id="menu-taxas">
+                    <span class="icon"><i class="fa-solid fa-motorcycle"></i></span>
+                    <span class="nav-text">Taxas de Entrega</span>
+                </a>
+                <a href="#" class="nav-item" id="menu-promocoes">
+                    <span class="icon"><i class="fa-solid fa-ticket"></i></span>
+                    <span class="nav-text">Promoções</span>
+                </a>
+                <a href="#" class="nav-item" id="menu-relatorios">
+                    <span class="icon"><i class="fa-solid fa-chart-line"></i></span>
+                    <span class="nav-text">Relatórios</span>
+                </a>
+                <a href="#" class="nav-item" id="menu-config">
+                    <span class="icon"><i class="fa-solid fa-gear"></i></span>
+                    <span class="nav-text">Configurações</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <a href="index.html" class="nav-item" target="_blank" style="margin-bottom: 10px;">
+                    <span class="icon"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+                    <span class="nav-text">Ver Site</span>
+                </a>
+                <a href="#" class="nav-item" id="btn-logout" style="color: #D62828;">
+                    <span class="icon"><i class="fa-solid fa-right-from-bracket" style="color: #D62828;"></i></span>
+                    <span class="nav-text">Sair do Sistema</span>
+                </a>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            
+            <header class="top-header">
+                <h2 id="header-title">Gestão de Pedidos</h2>
+                <div class="admin-status">
+                    <span class="status-indicator"></span>
+                    <span class="status-text">Sistema Online</span>
+                </div>
+            </header>
+
+            <!-- VIEW 1: KANBAN -->
+            <div id="view-pedidos" style="display: flex; flex-direction: column; height: 100%;">
+                <div class="mobile-tabs">
+                    <button class="tab-btn active" data-target="col-novos">Novos <span class="tab-badge" id="tab-count-novos">0</span></button>
+                    <button class="tab-btn" data-target="col-preparo">Preparo <span class="tab-badge" id="tab-count-preparo">0</span></button>
+                    <button class="tab-btn" data-target="col-pronto">Prontos <span class="tab-badge" id="tab-count-pronto">0</span></button>
+                </div>
+                <main class="kanban-board">
+                    <div class="kanban-column active-mobile" id="col-novos">
+                        <div class="column-header new-orders"><h2>Novos Pedidos</h2><span class="count" id="count-novos">0</span></div>
+                        <div class="column-body" id="lista-novos"></div>
+                    </div>
+                    <div class="kanban-column" id="col-preparo">
+                        <div class="column-header prep-orders"><h2>Em Preparo</h2><span class="count" id="count-preparo">0</span></div>
+                        <div class="column-body" id="lista-preparo"></div>
+                    </div>
+                    <div class="kanban-column" id="col-pronto">
+                        <div class="column-header ready-orders"><h2>Pronto / Retirada</h2><span class="count" id="count-pronto">0</span></div>
+                        <div class="column-body" id="lista-pronto"></div>
+                    </div>
+                </main>
+            </div>
+
+            <!-- VIEW 2: CARDÁPIO -->
+            <div id="view-cardapio" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
+                <div class="cardapio-actions">
+                    <button class="btn-primary" onclick="abrirModalCategoria()">+ Nova Categoria</button>
+                    <button class="btn-secondary" onclick="abrirModalProduto()">+ Novo Produto</button>
+                </div>
+                <div id="lista-cardapio-admin"><p style="color: var(--text-muted); margin-top: 20px;">Carregando cardápio...</p></div>
+            </div>
+
+            <!-- VIEW 3: TAXAS DE ENTREGA -->
+            <div id="view-taxas" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
+                <div class="cardapio-actions">
+                    <button class="btn-primary" onclick="abrirModalTaxa()">+ Nova Região de Entrega</button>
+                </div>
+                <div class="config-section" style="margin-bottom: 20px;">
+                    <h3>Bairros e Regiões Atendidas</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Os clientes só poderão pedir Delivery se o bairro deles estiver cadastrado aqui.</p>
+                    <div id="lista-taxas-admin" class="prod-list">
+                        <!-- Lista de taxas entra aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 4: PROMOÇÕES -->
+            <div id="view-promocoes" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
+                <div class="cardapio-actions">
+                    <button class="btn-primary" onclick="abrirModalPromocao()">+ Novo Cupom de Desconto</button>
+                </div>
+                <div class="config-section" style="margin-bottom: 20px;">
+                    <h3>Cupons Ativos e Inativos</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Crie códigos (ex: SEXTOU10) para dar descontos no carrinho.</p>
+                    <div id="lista-promocoes-admin" class="prod-list">
+                        <!-- Lista de promocoes entra aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 5: RELATÓRIOS -->
+            <div id="view-relatorios" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
+                <div class="report-cards">
+                    <div class="report-card"><h3>Faturamento Total</h3><p id="res-faturamento">R$ 0,00</p><span>Pedidos concluídos</span></div>
+                    <div class="report-card"><h3>Total de Vendas</h3><p id="res-vendas">0</p><span>Pedidos entregues</span></div>
+                    <div class="report-card"><h3>Ticket Médio</h3><p id="res-ticket">R$ 0,00</p><span>Média gasta por cliente</span></div>
+                    <div class="report-card"><h3>Mais Vendido</h3><p id="res-top-produto" style="font-size: 18px; padding: 5px 0;">-</p><span>Top 1 do cardápio</span></div>
+                </div>
+                <div class="recent-sales">
+                    <h3>Últimas Vendas Concluídas</h3>
+                    <div class="sales-list" id="lista-vendas-concluidas"><p style="color: var(--text-muted);">Carregando relatório...</p></div>
+                    <div id="pagination-controls" class="pagination-controls"></div>
+                </div>
+            </div>
+
+            <!-- VIEW 6: CONFIGURAÇÕES -->
+            <div id="view-config" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
+                <div class="config-container">
+                    <div class="config-section">
+                        <h3>Status Geral da Loja</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Ao desligar, os clientes verão o cardápio mas não poderão finalizar nenhum pedido.</p>
+                        <div class="toggle-container"><span style="font-weight: bold; color: var(--text-dark);">Loja Aberta?</span><label class="switch"><input type="checkbox" id="conf-status" checked><span class="slider round"></span></label></div>
+                    </div>
+                    <div class="config-section" style="margin-top: 25px;">
+                        <h3>Sistema de Delivery</h3>
+                        <div class="toggle-container" style="margin-bottom: 15px;"><span style="font-weight: bold; color: var(--text-dark);">Habilitar Delivery?</span><label class="switch"><input type="checkbox" id="conf-delivery-status" checked><span class="slider round"></span></label></div>
+                        <div class="form-group"><label>Tempo Médio de Entrega</label><input type="text" id="conf-delivery-time" placeholder="Ex: 40-60 min"></div>
+                    </div>
+                    <div class="config-section" style="margin-top: 25px;">
+                        <h3>Informações do Cabeçalho</h3>
+                        <div class="form-group"><label>Nome do Estabelecimento</label><input type="text" id="conf-nome" placeholder="Ex: Nutri Life"></div>
+                        <div class="form-group"><label>Frase de Efeito (Subtítulo)</label><input type="text" id="conf-frase" placeholder="Ex: Saúde e vitalidade em cada escolha."></div>
+                        <div class="form-group"><label>Endereço Físico (Retirada)</label><input type="text" id="conf-endereco" placeholder="Ex: Rua Principal, 123 - Centro"></div>
+                    </div>
+                    <div class="config-section" style="margin-top: 25px;">
+                        <h3>Redes Sociais & Contato</h3>
+                        <div class="form-group"><label>WhatsApp (Somente números)</label><input type="text" id="conf-telefone" placeholder="Ex: 11999999999"></div>
+                        <div class="form-group"><label>Link do Instagram</label><input type="text" id="conf-instagram" placeholder="Ex: https://instagram.com/seuperfil"></div>
+                        <div class="form-group"><label>Link do Facebook</label><input type="text" id="conf-facebook" placeholder="Ex: https://facebook.com/suapagina"></div>
+                    </div>
+                    <div class="config-section" style="margin-top: 25px;">
+                        <h3>Horários de Funcionamento</h3>
+                        <div class="hours-grid">
+                            <input type="text" id="conf-hr-semana" placeholder="Seg a Sex (Ex: 08:00 às 20:00)" style="margin-bottom: 8px; width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <input type="text" id="conf-hr-sabado" placeholder="Sábado (Ex: 09:00 às 14:00)" style="margin-bottom: 8px; width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <input type="text" id="conf-hr-domingo" placeholder="Domingo (Ex: Fechado)" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                        </div>
+                    </div>
+                    <button class="btn-primary" style="margin-top: 15px; width: 100%;" onclick="salvarConfiguracoes()">Salvar Configurações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAIS CARDÁPIO -->
+    <div class="modal-overlay" id="modal-categoria">
+        <div class="modal-content">
+            <button class="close-modal" onclick="fecharModalCategoria()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body">
+                <h2 class="modal-title" id="titulo-modal-categoria">Nova Categoria</h2>
+                <input type="hidden" id="cat-id">
+                <div class="form-group"><label>Nome da Categoria</label><input type="text" id="cat-nome" placeholder="Ex: Shakes Premium"></div>
+                <div class="form-group"><label>Descrição (Opcional)</label><input type="text" id="cat-desc" placeholder="Ex: Mais de 20g de proteína..."></div>
+            </div>
+            <div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarCategoria()">Salvar Categoria</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-produto">
+        <div class="modal-content" style="max-height: 90vh;">
+            <button class="close-modal" onclick="fecharModalProduto()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body">
+                <h2 class="modal-title" id="titulo-modal-produto">Novo Produto</h2>
+                <input type="hidden" id="prod-id"> 
+                <div class="form-group"><label>Categoria</label><select id="prod-categoria"></select></div>
+                <div class="form-group"><label>Nome do Produto</label><input type="text" id="prod-nome" placeholder="Ex: Shake Base"></div>
+                <div class="form-group"><label>Descrição</label><textarea id="prod-desc" rows="2" placeholder="O que vai no prato?"></textarea></div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;"><label>Preço (R$)</label><input type="number" id="prod-preco" placeholder="Ex: 39.90" step="0.01"></div>
+                    <div class="form-group" style="flex: 1;"><label>Texto do Botão</label><input type="text" id="prod-btn" placeholder="Ex: Personalizar" value="Adicionar"></div>
+                </div>
+                <div class="form-group"><label>Tags (Separadas por vírgula)</label><input type="text" id="prod-tags" placeholder="Ex: 36G PROTEÍNA, SEM GLÚTEN"></div>
+                <div class="form-group"><label>Opções Obrigatórias (Sabor, Tamanho...)</label><input type="text" id="prod-opcoes" placeholder="Ex: Frango, Queijo, Mista (Vazio = Normal)"></div>
+                <div class="form-group">
+                    <label>Imagem do Produto</label>
+                    <input type="file" id="prod-img-file" accept="image/*" style="border: none; padding: 0; margin-bottom: 10px; width: 100%;">
+                    <input type="hidden" id="prod-img-url">
+                    <div style="text-align: center; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px dashed #ccc;">
+                        <img id="prod-img-preview" src="" style="max-width: 100%; max-height: 120px; object-fit: contain; display: none; border-radius: 8px; margin: 0 auto;">
+                        <span id="prod-img-placeholder" style="font-size: 12px; color: var(--text-muted);">Nenhuma imagem selecionada</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn-action btn-finish" id="btn-salvar-produto" onclick="salvarProduto()">Salvar Produto</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL TAXAS -->
+    <div class="modal-overlay" id="modal-taxa">
+        <div class="modal-content">
+            <button class="close-modal" onclick="fecharModalTaxa()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body">
+                <h2 class="modal-title" id="titulo-modal-taxa">Nova Taxa / Região</h2>
+                <input type="hidden" id="taxa-id">
+                <div class="form-group"><label>Nome do Bairro / Região</label><input type="text" id="taxa-nome" placeholder="Ex: Centro"></div>
+                <div class="form-group"><label>Valor da Taxa (R$)</label><input type="number" id="taxa-valor" placeholder="Ex: 5.00" step="0.01"></div>
+            </div>
+            <div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarTaxa()">Salvar Taxa</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL PROMOÇÕES -->
+    <div class="modal-overlay" id="modal-promocao">
+        <div class="modal-content">
+            <button class="close-modal" onclick="fecharModalPromocao()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body">
+                <h2 class="modal-title" id="titulo-modal-promocao">Novo Cupom</h2>
+                <input type="hidden" id="promo-id">
+                <div class="form-group"><label>Código do Cupom</label><input type="text" id="promo-codigo" placeholder="Ex: SEXTOU10" style="text-transform: uppercase;"></div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Tipo de Desconto</label>
+                        <select id="promo-tipo">
+                            <option value="porcentagem">Porcentagem (%)</option>
+                            <option value="fixo">Valor Fixo (R$)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;"><label>Valor do Desconto</label><input type="number" id="promo-valor" placeholder="Ex: 10" step="0.01"></div>
+                </div>
+                <div class="toggle-container" style="padding: 10px; margin-top: 10px;">
+                    <span style="font-weight: bold; font-size: 13px; color: var(--text-dark);">Cupom Ativo?</span>
+                    <label class="switch"><input type="checkbox" id="promo-ativo" checked><span class="slider round"></span></label>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarPromocao()">Salvar Cupom</button></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>
+

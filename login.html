@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Nutri Life Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #F8F7F3;
+            --text-dark: #2F3E29;
+            --primary-green: #3A4C31;
+            --card-bg: #FFFFFF;
+            --border-color: #E5E4DE;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        body { background-color: var(--bg-color); display: flex; justify-content: center; align-items: center; height: 100vh; }
+        
+        .login-box {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+        .login-box img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            object-fit: cover;
+            border: 2px solid var(--primary-green);
+            padding: 2px;
+        }
+        .login-box h2 { color: var(--primary-green); margin-bottom: 5px; font-size: 22px; }
+        .login-box p { color: #7A8075; font-size: 13px; margin-bottom: 25px; }
+        
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 12px; color: var(--text-dark); margin-bottom: 5px; font-weight: bold; }
+        .form-group input {
+            width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
+            border-radius: 10px; font-size: 14px; outline: none; transition: 0.2s;
+        }
+        .form-group input:focus { border-color: var(--primary-green); }
+        
+        .btn-login {
+            background-color: var(--primary-green); color: white; border: none;
+            width: 100%; padding: 12px; border-radius: 10px; font-size: 15px;
+            font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s;
+        }
+        .btn-login:hover { opacity: 0.9; }
+
+        #msg-erro { color: #D62828; font-size: 12px; margin-top: 15px; display: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <img src="assets/img/icon.png" alt="Logo Nutri Life">
+        <h2>Acesso Restrito</h2>
+        <p>Área de gestão da loja</p>
+
+        <div class="form-group">
+            <label>Usuário</label>
+            <input type="text" id="usuario" placeholder="Digite o usuário">
+        </div>
+        <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="senha" placeholder="Digite a senha">
+        </div>
+
+        <button class="btn-login" onclick="fazerLogin()">Entrar <i class="fa-solid fa-arrow-right-to-bracket"></i></button>
+        <div id="msg-erro">Usuário ou senha incorretos!</div>
+    </div>
+
+    <script>
+        function fazerLogin() {
+            const user = document.getElementById('usuario').value;
+            const pass = document.getElementById('senha').value;
+
+            // AQUI ESTÁ A SUA TRAVA DE SEGURANÇA
+            if (user === 'NutriLife' && pass === 'hype2026') {
+                // Salva na memória do navegador que ele logou com sucesso
+                sessionStorage.setItem('adminLogado', 'true');
+                window.location.href = 'admin.html';
+            } else {
+                document.getElementById('msg-erro').style.display = 'block';
+            }
+        }
+
+        // Permite logar apertando o "Enter" no teclado
+        document.getElementById('senha').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') fazerLogin();
+        });
+    </script>
+</body>
+</html>
