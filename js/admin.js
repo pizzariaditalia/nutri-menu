@@ -15,12 +15,14 @@ const db = getFirestore(app);
 
 let viewAtual = 'pedidos'; 
 const badgePedidos = document.getElementById('badge-pedidos');
+const badgeAvaliacoes = document.getElementById('badge-avaliacoes'); // Aviso de Avaliação nova
 
 function esconderTodasViews() {
     document.getElementById('view-pedidos').style.display = 'none';
     document.getElementById('view-cardapio').style.display = 'none';
     document.getElementById('view-taxas').style.display = 'none';
     document.getElementById('view-promocoes').style.display = 'none';
+    document.getElementById('view-avaliacoes').style.display = 'none'; // MUDANÇA
     document.getElementById('view-relatorios').style.display = 'none';
     document.getElementById('view-config').style.display = 'none';
     document.querySelectorAll('.sidebar-nav .nav-item').forEach(btn => btn.classList.remove('active'));
@@ -30,6 +32,16 @@ document.getElementById('menu-pedidos').addEventListener('click', (e) => { e.pre
 document.getElementById('menu-cardapio').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'cardapio'; esconderTodasViews(); document.getElementById('view-cardapio').style.display = 'flex'; document.getElementById('menu-cardapio').classList.add('active'); document.getElementById('header-title').innerText = "Gerenciar Cardápio"; });
 document.getElementById('menu-taxas').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'taxas'; esconderTodasViews(); document.getElementById('view-taxas').style.display = 'flex'; document.getElementById('menu-taxas').classList.add('active'); document.getElementById('header-title').innerText = "Taxas de Entrega"; });
 document.getElementById('menu-promocoes').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'promocoes'; esconderTodasViews(); document.getElementById('view-promocoes').style.display = 'flex'; document.getElementById('menu-promocoes').classList.add('active'); document.getElementById('header-title').innerText = "Cupons e Promoções"; });
+
+// MUDANÇA: Aba de Avaliações
+document.getElementById('menu-avaliacoes').addEventListener('click', (e) => { 
+    e.preventDefault(); viewAtual = 'avaliacoes'; esconderTodasViews(); 
+    document.getElementById('view-avaliacoes').style.display = 'flex'; 
+    document.getElementById('menu-avaliacoes').classList.add('active'); 
+    document.getElementById('header-title').innerText = "Moderação de Avaliações"; 
+    badgeAvaliacoes.style.display = 'none'; 
+});
+
 document.getElementById('menu-relatorios').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'relatorios'; esconderTodasViews(); document.getElementById('view-relatorios').style.display = 'flex'; document.getElementById('menu-relatorios').classList.add('active'); document.getElementById('header-title').innerText = "Relatórios e Vendas"; });
 document.getElementById('menu-config').addEventListener('click', (e) => { e.preventDefault(); viewAtual = 'config'; esconderTodasViews(); document.getElementById('view-config').style.display = 'flex'; document.getElementById('menu-config').classList.add('active'); document.getElementById('header-title').innerText = "Configurações da Loja"; });
 
@@ -42,9 +54,7 @@ function tocarSomNotificacao() { const audio = new Audio('assets/audio/notificac
 // ==============================
 // KANBAN E RELATÓRIOS
 // ==============================
-let primeiraCarga = true; 
-let vendasConcluidas = []; let paginaAtualVendas = 1; const itensPorPagina = 10;
-
+let primeiraCarga = true; let vendasConcluidas = []; let paginaAtualVendas = 1; const itensPorPagina = 10;
 onSnapshot(collection(db, "pedidos"), (snapshot) => {
     snapshot.docChanges().forEach((change) => { if (change.type === "added" && !primeiraCarga) { if (change.doc.data().status === 'novo') { tocarSomNotificacao(); if (viewAtual !== 'pedidos') badgePedidos.style.display = 'flex'; } } });
     primeiraCarga = false; 
@@ -55,45 +65,24 @@ onSnapshot(collection(db, "pedidos"), (snapshot) => {
         const pedido = documento.data(); const idPedido = documento.id; 
         if (pedido.status === 'pronto' || pedido.status === 'arquivado') { faturamentoTotal += pedido.total_pedido; totalVendas++; vendasConcluidas.push(pedido); pedido.itens.forEach(item => { contagemProdutos[item.nome] = (contagemProdutos[item.nome] || 0) + item.quantidade; }); }
         if (pedido.status === 'arquivado') return;
-
         let itensHtml = ''; pedido.itens.forEach(item => { let obsHtml = item.observacao ? `<span class="obs">Obs: ${item.observacao}</span>` : ''; itensHtml += `<li>${item.quantidade}x ${item.nome} ${obsHtml}</li>`; });
         let btnAcao = '';
         if (pedido.status === 'novo') { btnAcao = `<button class="btn-action btn-start" onclick="atualizarStatus('${idPedido}', 'preparo')">Começar Preparo</button>`; qtdNovos++; }
         else if (pedido.status === 'preparo') { btnAcao = `<button class="btn-action btn-finish" onclick="atualizarStatus('${idPedido}', 'pronto')">Marcar como Pronto</button>`; qtdPreparo++; }
         else if (pedido.status === 'pronto') { btnAcao = `<button class="btn-action btn-archive" onclick="atualizarStatus('${idPedido}', 'arquivado')"><i class="fa-solid fa-check"></i> Entregue (Arquivar)</button>`; qtdPronto++; }
-
         let deliveryBadge = pedido.tipo_entrega === 'Delivery' ? `<span style="background:#E9C46A; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-motorcycle"></i> Delivery</span>` : `<span style="background:#E5E4DE; color:#333; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;"><i class="fa-solid fa-person-walking"></i> Retirada</span>`;
-        let enderecoHtml = '';
-        if (pedido.tipo_entrega === 'Delivery' && pedido.endereco_entrega) { enderecoHtml = `<div style="font-size:12px; margin-bottom:10px; background:#FFF5F5; padding:8px; border-radius:6px; border:1px solid #E26D5C;"><strong><i class="fa-solid fa-location-dot" style="color:var(--color-new)"></i> Endereço:</strong> ${pedido.endereco_entrega}</div>`; }
-
+        let enderecoHtml = ''; if (pedido.tipo_entrega === 'Delivery' && pedido.endereco_entrega) { enderecoHtml = `<div style="font-size:12px; margin-bottom:10px; background:#FFF5F5; padding:8px; border-radius:6px; border:1px solid #E26D5C;"><strong><i class="fa-solid fa-location-dot" style="color:var(--color-new)"></i> Endereço:</strong> ${pedido.endereco_entrega}</div>`; }
         const cartaoHtml = `<div class="order-card ${pedido.status}"><div class="order-header"><span class="order-client"><i class="fa-solid fa-user" style="color: var(--primary-green); margin-right: 5px;"></i> ${pedido.cliente} ${deliveryBadge}</span><span class="order-time"><i class="fa-regular fa-clock" style="margin-right: 5px;"></i> ${formatarDataHora(pedido.data_hora).split(' às ')[1]}</span></div>${enderecoHtml}<ul class="order-items">${itensHtml}</ul><div class="order-footer"><span class="order-total">${formatarMoeda(pedido.total_pedido)}</span><span class="order-payment"><i class="fa-regular fa-credit-card" style="margin-right: 4px;"></i> ${pedido.pagamento}</span></div>${btnAcao}</div>`;
         if (pedido.status === 'novo') document.getElementById('lista-novos').innerHTML += cartaoHtml;
         if (pedido.status === 'preparo') document.getElementById('lista-preparo').innerHTML += cartaoHtml;
         if (pedido.status === 'pronto') document.getElementById('lista-pronto').innerHTML += cartaoHtml;
     });
 
-    // --- CORREÇÃO: Atualiza números corretamente em todas as telas ---
-    document.getElementById('count-novos').innerText = qtdNovos; 
-    document.getElementById('count-preparo').innerText = qtdPreparo; 
-    document.getElementById('count-pronto').innerText = qtdPronto;
-    
+    document.getElementById('count-novos').innerText = qtdNovos; document.getElementById('count-preparo').innerText = qtdPreparo; document.getElementById('count-pronto').innerText = qtdPronto;
     const tabNovos = document.getElementById('tab-count-novos');
-    if(tabNovos) {
-        tabNovos.innerText = qtdNovos;
-        // Adiciona ou remove a bolinha vermelha se houver novos pedidos
-        if(qtdNovos > 0) {
-            tabNovos.classList.add('alert-red');
-        } else {
-            tabNovos.classList.remove('alert-red');
-        }
-    }
-    
-    const tabPreparo = document.getElementById('tab-count-preparo');
-    if(tabPreparo) tabPreparo.innerText = qtdPreparo;
-    
-    const tabPronto = document.getElementById('tab-count-pronto');
-    if(tabPronto) tabPronto.innerText = qtdPronto;
-    // -----------------------------------------------------------------
+    if(tabNovos) { tabNovos.innerText = qtdNovos; if(qtdNovos > 0) { tabNovos.classList.add('alert-red'); } else { tabNovos.classList.remove('alert-red'); } }
+    const tabPreparo = document.getElementById('tab-count-preparo'); if(tabPreparo) tabPreparo.innerText = qtdPreparo;
+    const tabPronto = document.getElementById('tab-count-pronto'); if(tabPronto) tabPronto.innerText = qtdPronto;
 
     const ticketMedio = totalVendas > 0 ? (faturamentoTotal / totalVendas) : 0; let topProduto = "-", maxVendas = 0;
     for (const [nome, qtd] of Object.entries(contagemProdutos)) { if (qtd > maxVendas) { maxVendas = qtd; topProduto = nome; } }
@@ -103,7 +92,6 @@ onSnapshot(collection(db, "pedidos"), (snapshot) => {
 
 window.atualizarStatus = async function(idPedido, novoStatus) { try { await updateDoc(doc(db, "pedidos", idPedido), { status: novoStatus }); } catch (erro) { alert("Erro ao atualizar."); } }
 window.mudarPaginaVendas = function(novaPagina) { paginaAtualVendas = novaPagina; renderizarPaginaVendas(); }
-
 function renderizarPaginaVendas() {
     const lista = document.getElementById('lista-vendas-concluidas'); const controles = document.getElementById('pagination-controls');
     if (vendasConcluidas.length === 0) { lista.innerHTML = '<p style="color:var(--text-muted);">Nenhuma venda concluída ainda.</p>'; controles.innerHTML = ''; return; }
@@ -121,8 +109,86 @@ function renderizarPaginaVendas() {
 const tabBtns = document.querySelectorAll('.tab-btn'); const kanbanCols = document.querySelectorAll('.kanban-column');
 tabBtns.forEach(btn => { btn.addEventListener('click', () => { tabBtns.forEach(b => b.classList.remove('active')); kanbanCols.forEach(c => c.classList.remove('active-mobile')); btn.classList.add('active'); document.getElementById(btn.getAttribute('data-target')).classList.add('active-mobile'); }); });
 
+
 // ==============================
-// GESTÃO DO CARDÁPIO
+// MUDANÇA: MODERAÇÃO DE AVALIAÇÕES
+// ==============================
+let avaliacoes = [];
+let primeiraCargaAval = true;
+
+onSnapshot(collection(db, "avaliacoes"), (snapshot) => {
+    avaliacoes = [];
+    
+    // Toca som se chegar avaliação nova (pendente)
+    snapshot.docChanges().forEach((change) => { 
+        if (change.type === "added" && !primeiraCargaAval) { 
+            if (change.doc.data().status === 'pendente') { 
+                tocarSomNotificacao(); 
+                if (viewAtual !== 'avaliacoes') badgeAvaliacoes.style.display = 'flex'; 
+            } 
+        } 
+    });
+    primeiraCargaAval = false;
+
+    snapshot.forEach(doc => avaliacoes.push({ id: doc.id, ...doc.data() })); 
+    
+    // Ordena da mais nova pra mais antiga
+    avaliacoes.sort((a, b) => new Date(b.data_hora) - new Date(a.data_hora));
+    renderizarAvaliacoes();
+});
+
+function renderizarAvaliacoes() {
+    const listaPendentes = document.getElementById('lista-avaliacoes-pendentes');
+    const listaAprovadas = document.getElementById('lista-avaliacoes-aprovadas');
+    
+    listaPendentes.innerHTML = '';
+    listaAprovadas.innerHTML = '';
+    let qtdPendentes = 0, qtdAprovadas = 0;
+
+    avaliacoes.forEach(aval => {
+        let estrelas = '⭐'.repeat(aval.nota);
+        let miniImg = aval.imagem ? `<img src="${aval.imagem}" style="width:50px; height:50px; border-radius:8px; object-fit:cover; margin-right:15px; border:1px solid #ccc;">` : '';
+        
+        let htmlAval = `
+            <div class="prod-item" style="align-items: flex-start; flex-direction: column;">
+                <div style="display:flex; width: 100%;">
+                    ${miniImg}
+                    <div style="flex:1;">
+                        <strong style="font-size:14px;">${aval.nome} <span style="font-size:10px; color:#D62828;">${estrelas}</span></strong>
+                        <span style="font-size:11px; color:#999; display:block; margin-bottom:5px;">${formatarDataHora(aval.data_hora)}</span>
+                        <p style="font-size:13px; color:var(--text-dark); font-style:italic;">"${aval.comentario}"</p>
+                    </div>
+                </div>
+                <div style="width: 100%; display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px;">
+                    ${aval.status === 'pendente' ? `<button onclick="aprovarAvaliacao('${aval.id}')" style="background:var(--primary-green); color:white; border:none; padding:5px 15px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">Aprovar</button>` : ''}
+                    <button onclick="excluirAvaliacao('${aval.id}')" style="background:#D62828; color:white; border:none; padding:5px 15px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold;">Excluir</button>
+                </div>
+            </div>
+        `;
+
+        if (aval.status === 'pendente') { listaPendentes.innerHTML += htmlAval; qtdPendentes++; }
+        if (aval.status === 'aprovado') { listaAprovadas.innerHTML += htmlAval; qtdAprovadas++; }
+    });
+
+    if(qtdPendentes === 0) listaPendentes.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação pendente.</p>';
+    if(qtdAprovadas === 0) listaAprovadas.innerHTML = '<p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação aprovada.</p>';
+}
+
+window.aprovarAvaliacao = async function(id) {
+    if(confirm("Aprovar e exibir no site?")) {
+        await updateDoc(doc(db, "avaliacoes", id), { status: "aprovado" });
+    }
+}
+
+window.excluirAvaliacao = async function(id) {
+    if(confirm("Apagar definitivamente essa avaliação?")) {
+        await deleteDoc(doc(db, "avaliacoes", id));
+    }
+}
+
+
+// ==============================
+// GESTÃO DO CARDÁPIO, TAXAS E PROMOÇÕES (INALTERADOS)
 // ==============================
 let categorias = []; let produtos = [];
 onSnapshot(collection(db, "categorias"), (snapshot) => { categorias = []; snapshot.forEach(doc => categorias.push({ id: doc.id, ...doc.data() })); renderizarCardapioAdmin(); });
@@ -197,7 +263,6 @@ window.abrirModalProduto = (id = '') => {
     modalProd.classList.add('active');
 }
 window.fecharModalProduto = () => modalProd.classList.remove('active');
-
 window.salvarProduto = async () => {
     const id = document.getElementById('prod-id').value; const nomeProd = document.getElementById('prod-nome').value; const precoProd = parseFloat(document.getElementById('prod-preco').value);
     if(!nomeProd || isNaN(precoProd)) return alert("Nome e Preço são obrigatórios!");
@@ -208,23 +273,13 @@ window.salvarProduto = async () => {
 }
 window.excluirProduto = async (id) => { if(confirm("Excluir produto?")) await deleteDoc(doc(db, "produtos", id)); }
 
-
-// ==============================
-// GESTÃO DE TAXAS / REGIÕES
-// ==============================
 let taxas = [];
-onSnapshot(collection(db, "taxas_entrega"), (snapshot) => {
-    taxas = []; snapshot.forEach(doc => taxas.push({ id: doc.id, ...doc.data() })); renderizarTaxasAdmin();
-});
-
+onSnapshot(collection(db, "taxas_entrega"), (snapshot) => { taxas = []; snapshot.forEach(doc => taxas.push({ id: doc.id, ...doc.data() })); renderizarTaxasAdmin(); });
 function renderizarTaxasAdmin() {
     const lista = document.getElementById('lista-taxas-admin'); lista.innerHTML = '';
     if (taxas.length === 0) { lista.innerHTML = '<p style="color: var(--text-muted);">Nenhuma região cadastrada.</p>'; return; }
-    taxas.forEach(taxa => {
-        lista.innerHTML += `<div class="prod-item"><div class="prod-item-info"><strong>📍 ${taxa.bairro}</strong><span>Taxa: ${formatarMoeda(taxa.valor)}</span></div><div class="prod-item-actions"><button class="edit" onclick="abrirModalTaxa('${taxa.id}')">Editar</button><button class="delete" onclick="excluirTaxa('${taxa.id}')">Excluir</button></div></div>`;
-    });
+    taxas.forEach(taxa => { lista.innerHTML += `<div class="prod-item"><div class="prod-item-info"><strong>📍 ${taxa.bairro}</strong><span>Taxa: ${formatarMoeda(taxa.valor)}</span></div><div class="prod-item-actions"><button class="edit" onclick="abrirModalTaxa('${taxa.id}')">Editar</button><button class="delete" onclick="excluirTaxa('${taxa.id}')">Excluir</button></div></div>`; });
 }
-
 const modalTaxa = document.getElementById('modal-taxa');
 window.abrirModalTaxa = (id = '') => {
     if (id) { const taxa = taxas.find(t => t.id === id); document.getElementById('taxa-id').value = taxa.id; document.getElementById('taxa-nome').value = taxa.bairro; document.getElementById('taxa-valor').value = taxa.valor; document.getElementById('titulo-modal-taxa').innerText = 'Editar Região'; } 
@@ -232,32 +287,16 @@ window.abrirModalTaxa = (id = '') => {
     modalTaxa.classList.add('active');
 }
 window.fecharModalTaxa = () => modalTaxa.classList.remove('active');
-window.salvarTaxa = async () => {
-    const id = document.getElementById('taxa-id').value; const nome = document.getElementById('taxa-nome').value; const valor = parseFloat(document.getElementById('taxa-valor').value);
-    if(!nome || isNaN(valor)) return alert("Preencha Bairro e Valor corretamente!");
-    if (id) await updateDoc(doc(db, "taxas_entrega", id), { bairro: nome, valor: valor }); else await addDoc(collection(db, "taxas_entrega"), { bairro: nome, valor: valor });
-    fecharModalTaxa();
-}
+window.salvarTaxa = async () => { const id = document.getElementById('taxa-id').value; const nome = document.getElementById('taxa-nome').value; const valor = parseFloat(document.getElementById('taxa-valor').value); if(!nome || isNaN(valor)) return alert("Preencha Bairro e Valor corretamente!"); if (id) await updateDoc(doc(db, "taxas_entrega", id), { bairro: nome, valor: valor }); else await addDoc(collection(db, "taxas_entrega"), { bairro: nome, valor: valor }); fecharModalTaxa(); }
 window.excluirTaxa = async (id) => { if(confirm("Excluir esta região?")) await deleteDoc(doc(db, "taxas_entrega", id)); }
 
-// ==============================
-// GESTÃO DE PROMOÇÕES (CUPONS)
-// ==============================
 let promocoes = [];
-onSnapshot(collection(db, "promocoes"), (snapshot) => {
-    promocoes = []; snapshot.forEach(doc => promocoes.push({ id: doc.id, ...doc.data() })); renderizarPromocoesAdmin();
-});
-
+onSnapshot(collection(db, "promocoes"), (snapshot) => { promocoes = []; snapshot.forEach(doc => promocoes.push({ id: doc.id, ...doc.data() })); renderizarPromocoesAdmin(); });
 function renderizarPromocoesAdmin() {
     const lista = document.getElementById('lista-promocoes-admin'); lista.innerHTML = '';
     if (promocoes.length === 0) { lista.innerHTML = '<p style="color: var(--text-muted);">Nenhum cupom cadastrado.</p>'; return; }
-    promocoes.forEach(promo => {
-        let textoDesconto = promo.tipo === 'porcentagem' ? `${promo.valor}% de desconto` : `- ${formatarMoeda(promo.valor)}`;
-        let badge = promo.ativo ? '<span class="coupon-badge ativo">ATIVO</span>' : '<span class="coupon-badge inativo">INATIVO</span>';
-        lista.innerHTML += `<div class="prod-item"><div class="prod-item-info"><strong>🎟️ ${promo.codigo.toUpperCase()} ${badge}</strong><span>${textoDesconto}</span></div><div class="prod-item-actions"><button class="edit" onclick="abrirModalPromocao('${promo.id}')">Editar</button><button class="delete" onclick="excluirPromocao('${promo.id}')">Excluir</button></div></div>`;
-    });
+    promocoes.forEach(promo => { let textoDesconto = promo.tipo === 'porcentagem' ? `${promo.valor}% de desconto` : `- ${formatarMoeda(promo.valor)}`; let badge = promo.ativo ? '<span class="coupon-badge ativo">ATIVO</span>' : '<span class="coupon-badge inativo">INATIVO</span>'; lista.innerHTML += `<div class="prod-item"><div class="prod-item-info"><strong>🎟️ ${promo.codigo.toUpperCase()} ${badge}</strong><span>${textoDesconto}</span></div><div class="prod-item-actions"><button class="edit" onclick="abrirModalPromocao('${promo.id}')">Editar</button><button class="delete" onclick="excluirPromocao('${promo.id}')">Excluir</button></div></div>`; });
 }
-
 const modalPromo = document.getElementById('modal-promocao');
 window.abrirModalPromocao = (id = '') => {
     if (id) { const promo = promocoes.find(p => p.id === id); document.getElementById('promo-id').value = promo.id; document.getElementById('promo-codigo').value = promo.codigo; document.getElementById('promo-tipo').value = promo.tipo; document.getElementById('promo-valor').value = promo.valor; document.getElementById('promo-ativo').checked = promo.ativo; document.getElementById('titulo-modal-promocao').innerText = 'Editar Cupom'; } 
@@ -265,18 +304,9 @@ window.abrirModalPromocao = (id = '') => {
     modalPromo.classList.add('active');
 }
 window.fecharModalPromocao = () => modalPromo.classList.remove('active');
-window.salvarPromocao = async () => {
-    const id = document.getElementById('promo-id').value; const codigo = document.getElementById('promo-codigo').value.toUpperCase().trim(); const tipo = document.getElementById('promo-tipo').value; const valor = parseFloat(document.getElementById('promo-valor').value); const ativo = document.getElementById('promo-ativo').checked;
-    if(!codigo || isNaN(valor)) return alert("Preencha Código e Valor corretamente!");
-    const dados = { codigo: codigo, tipo: tipo, valor: valor, ativo: ativo };
-    if (id) await updateDoc(doc(db, "promocoes", id), dados); else await addDoc(collection(db, "promocoes"), dados);
-    fecharModalPromocao();
-}
+window.salvarPromocao = async () => { const id = document.getElementById('promo-id').value; const codigo = document.getElementById('promo-codigo').value.toUpperCase().trim(); const tipo = document.getElementById('promo-tipo').value; const valor = parseFloat(document.getElementById('promo-valor').value); const ativo = document.getElementById('promo-ativo').checked; if(!codigo || isNaN(valor)) return alert("Preencha Código e Valor corretamente!"); const dados = { codigo: codigo, tipo: tipo, valor: valor, ativo: ativo }; if (id) await updateDoc(doc(db, "promocoes", id), dados); else await addDoc(collection(db, "promocoes"), dados); fecharModalPromocao(); }
 window.excluirPromocao = async (id) => { if(confirm("Excluir este cupom?")) await deleteDoc(doc(db, "promocoes", id)); }
 
-// ==============================
-// CONFIGURAÇÕES DA LOJA
-// ==============================
 const docConfigRef = doc(db, "loja", "configuracoes");
 onSnapshot(docConfigRef, (docSnap) => {
     if(docSnap.exists()) {
@@ -284,11 +314,7 @@ onSnapshot(docConfigRef, (docSnap) => {
         document.getElementById('conf-status').checked = config.status_loja; document.getElementById('conf-delivery-status').checked = config.delivery_status || false; document.getElementById('conf-delivery-time').value = config.delivery_time || ""; document.getElementById('conf-nome').value = config.nome_loja || ""; document.getElementById('conf-frase').value = config.frase_efeito || ""; document.getElementById('conf-telefone').value = config.telefone || ""; document.getElementById('conf-endereco').value = config.endereco || ""; document.getElementById('conf-instagram').value = config.instagram || ""; document.getElementById('conf-facebook').value = config.facebook || ""; document.getElementById('conf-hr-semana').value = config.hr_semana || ""; document.getElementById('conf-hr-sabado').value = config.hr_sabado || ""; document.getElementById('conf-hr-domingo').value = config.hr_domingo || "";
     }
 });
-
 window.salvarConfiguracoes = async function() {
-    const dadosConfig = {
-        status_loja: document.getElementById('conf-status').checked, delivery_status: document.getElementById('conf-delivery-status').checked, delivery_time: document.getElementById('conf-delivery-time').value, nome_loja: document.getElementById('conf-nome').value, frase_efeito: document.getElementById('conf-frase').value, telefone: document.getElementById('conf-telefone').value, endereco: document.getElementById('conf-endereco').value, instagram: document.getElementById('conf-instagram').value, facebook: document.getElementById('conf-facebook').value, hr_semana: document.getElementById('conf-hr-semana').value, hr_sabado: document.getElementById('conf-hr-sabado').value, hr_domingo: document.getElementById('conf-hr-domingo').value
-    };
+    const dadosConfig = { status_loja: document.getElementById('conf-status').checked, delivery_status: document.getElementById('conf-delivery-status').checked, delivery_time: document.getElementById('conf-delivery-time').value, nome_loja: document.getElementById('conf-nome').value, frase_efeito: document.getElementById('conf-frase').value, telefone: document.getElementById('conf-telefone').value, endereco: document.getElementById('conf-endereco').value, instagram: document.getElementById('conf-instagram').value, facebook: document.getElementById('conf-facebook').value, hr_semana: document.getElementById('conf-hr-semana').value, hr_sabado: document.getElementById('conf-hr-sabado').value, hr_domingo: document.getElementById('conf-hr-domingo').value };
     try { await setDoc(docConfigRef, dadosConfig, {merge: true}); alert("Configurações salvas e aplicadas no site em tempo real!"); } catch (e) { alert("Erro ao salvar configurações."); }
 }
-
