@@ -1,7 +1,6 @@
 :root { --bg-color: #F0F2F5; --text-dark: #333333; --text-muted: #777777; --card-bg: #FFFFFF; --primary-green: #3A4C31; --border-color: #E5E4DE; --color-new: #E26D5C; --color-prep: #E9C46A; --color-ready: #2A9D8F; }
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
 
-/* MUDANÇA: height: 100dvh ajusta dinamicamente a barra do celular */
 body { background-color: var(--bg-color); color: var(--text-dark); height: 100vh; height: 100dvh; overflow: hidden; }
 .dashboard-layout { display: flex; height: 100vh; height: 100dvh; width: 100vw; }
 
@@ -44,7 +43,6 @@ body { background-color: var(--bg-color); color: var(--text-dark); height: 100vh
 .prep-orders .count { background: rgba(0,0,0,0.1); }
 .ready-orders { background-color: var(--color-ready); }
 
-/* MUDANÇA: padding-bottom para criar respiro no final da rolagem */
 .column-body { padding: 15px; padding-bottom: 50px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; }
 .column-body::-webkit-scrollbar { width: 6px; }
 .column-body::-webkit-scrollbar-thumb { background-color: #CCCCCC; border-radius: 10px; }
@@ -59,9 +57,16 @@ body { background-color: var(--bg-color); color: var(--text-dark); height: 100vh
 .order-items { list-style: none; margin-bottom: 15px; }
 .order-items li { font-size: 13px; margin-bottom: 5px; color: var(--text-dark); line-height: 1.4; }
 .order-items li span.obs { display: block; font-size: 11px; color: var(--color-new); font-style: italic; margin-top: 2px; background-color: #FFF5F5; padding: 4px; border-radius: 4px; }
-.order-footer { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.order-total { font-weight: bold; font-size: 16px; }
+.order-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; }
+.order-total { font-weight: bold; font-size: 16px; margin-bottom: auto; }
 .order-payment { font-size: 11px; background-color: #F0F0F0; padding: 4px 8px; border-radius: 4px; text-transform: capitalize; font-weight: 600; display: flex; align-items: center;}
+
+/* MUDANÇA AQUI: Estilos do Botão Disjuntor de Pagamento */
+.btn-pago-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid transparent; transition: 0.2s; font-family: inherit; margin-top: 5px;}
+.btn-pago-toggle.unpaid { background-color: #FFF0F0; color: #D62828; border-color: #D62828; }
+.btn-pago-toggle.paid { background-color: #E8F5E9; color: #2A9D8F; border-color: #2A9D8F; }
+.btn-pago-toggle:hover { opacity: 0.8; }
+
 .btn-action { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 13px; }
 .btn-start { background-color: var(--color-prep); color: var(--text-dark); }
 .btn-finish { background-color: var(--color-ready); }
@@ -82,7 +87,6 @@ body { background-color: var(--bg-color); color: var(--text-dark); height: 100vh
 .action-buttons .edit { color: var(--color-ready); }
 .action-buttons .delete { color: #D62828; }
 
-/* MUDANÇA: padding-bottom nas listas também para não cortar informações no celular */
 .prod-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
 .prod-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: #F8F7F3; border-radius: 8px; border: 1px solid var(--border-color); gap: 10px; }
 
@@ -114,7 +118,6 @@ body { background-color: var(--bg-color); color: var(--text-dark); height: 100vh
 .report-card span { font-size: 12px; color: var(--text-muted); }
 .recent-sales h3 { margin-bottom: 15px; color: var(--text-dark); font-size: 18px; }
 
-/* MUDANÇA: padding-bottom na área de vendas recentes também */
 .sales-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
 .sale-item { background: var(--card-bg); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); gap: 15px; }
 .sale-info { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -127,7 +130,6 @@ body { background-color: var(--bg-color); color: var(--text-dark); height: 100vh
 .page-btn:hover { background-color: #F8F7F3; }
 .page-btn.active { background-color: var(--primary-green); color: white; border-color: var(--primary-green); }
 
-/* MUDANÇA: Respiro no container das configurações (é ele quem resolve seu bug da foto) */
 .config-container { max-width: 600px; padding-bottom: 80px; }
 .config-section { background-color: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); }
 .config-section h3 { font-size: 18px; color: var(--primary-green); margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
@@ -156,12 +158,9 @@ input:checked + .slider:before { transform: translateX(22px); }
     .top-header h2 { font-size: 16px; }
     .status-text { display: none; }
     .mobile-tabs { display: flex; }
-    
-    /* MUDANÇA: Impede que o quadro do Kanban corte o último cartão */
     .kanban-board { padding: 15px; display: block; padding-bottom: 30px; }
     .kanban-column { width: 100%; min-width: 100%; height: calc(100vh - 180px); height: calc(100dvh - 180px); display: none; }
     .kanban-column.active-mobile { display: flex; }
-
     .action-buttons button { margin-left: 8px; }
     .prod-item-actions button { font-size: 12px; margin-left: 5px; }
 }
