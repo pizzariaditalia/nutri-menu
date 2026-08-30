@@ -35,7 +35,6 @@
                     <span class="icon"><i class="fa-solid fa-clipboard-list"></i></span>
                     <span class="nav-text">Meu Cardápio</span>
                 </a>
-                <!-- NOVOS MENUS AQUI -->
                 <a href="#" class="nav-item" id="menu-taxas">
                     <span class="icon"><i class="fa-solid fa-motorcycle"></i></span>
                     <span class="nav-text">Taxas de Entrega</span>
@@ -43,6 +42,14 @@
                 <a href="#" class="nav-item" id="menu-promocoes">
                     <span class="icon"><i class="fa-solid fa-ticket"></i></span>
                     <span class="nav-text">Promoções</span>
+                </a>
+                <!-- MUDANÇA: Aba de Avaliações -->
+                <a href="#" class="nav-item" id="menu-avaliacoes">
+                    <div style="position: relative;">
+                        <span class="icon"><i class="fa-solid fa-star"></i></span>
+                        <span class="nav-badge" id="badge-avaliacoes" style="display: none;">!</span>
+                    </div>
+                    <span class="nav-text">Avaliações</span>
                 </a>
                 <a href="#" class="nav-item" id="menu-relatorios">
                     <span class="icon"><i class="fa-solid fa-chart-line"></i></span>
@@ -76,7 +83,6 @@
                 </div>
             </header>
 
-            <!-- VIEW 1: KANBAN -->
             <div id="view-pedidos" style="display: flex; flex-direction: column; height: 100%;">
                 <div class="mobile-tabs">
                     <button class="tab-btn active" data-target="col-novos">Novos <span class="tab-badge" id="tab-count-novos">0</span></button>
@@ -99,44 +105,50 @@
                 </main>
             </div>
 
-            <!-- VIEW 2: CARDÁPIO -->
             <div id="view-cardapio" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
-                <div class="cardapio-actions">
-                    <button class="btn-primary" onclick="abrirModalCategoria()">+ Nova Categoria</button>
-                    <button class="btn-secondary" onclick="abrirModalProduto()">+ Novo Produto</button>
-                </div>
+                <div class="cardapio-actions"><button class="btn-primary" onclick="abrirModalCategoria()">+ Nova Categoria</button><button class="btn-secondary" onclick="abrirModalProduto()">+ Novo Produto</button></div>
                 <div id="lista-cardapio-admin"><p style="color: var(--text-muted); margin-top: 20px;">Carregando cardápio...</p></div>
             </div>
 
-            <!-- VIEW 3: TAXAS DE ENTREGA -->
             <div id="view-taxas" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
-                <div class="cardapio-actions">
-                    <button class="btn-primary" onclick="abrirModalTaxa()">+ Nova Região de Entrega</button>
-                </div>
+                <div class="cardapio-actions"><button class="btn-primary" onclick="abrirModalTaxa()">+ Nova Região de Entrega</button></div>
                 <div class="config-section" style="margin-bottom: 20px;">
                     <h3>Bairros e Regiões Atendidas</h3>
                     <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Os clientes só poderão pedir Delivery se o bairro deles estiver cadastrado aqui.</p>
-                    <div id="lista-taxas-admin" class="prod-list">
-                        <!-- Lista de taxas entra aqui -->
-                    </div>
+                    <div id="lista-taxas-admin" class="prod-list"></div>
                 </div>
             </div>
 
-            <!-- VIEW 4: PROMOÇÕES -->
             <div id="view-promocoes" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
-                <div class="cardapio-actions">
-                    <button class="btn-primary" onclick="abrirModalPromocao()">+ Novo Cupom de Desconto</button>
-                </div>
+                <div class="cardapio-actions"><button class="btn-primary" onclick="abrirModalPromocao()">+ Novo Cupom de Desconto</button></div>
                 <div class="config-section" style="margin-bottom: 20px;">
                     <h3>Cupons Ativos e Inativos</h3>
                     <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Crie códigos (ex: SEXTOU10) para dar descontos no carrinho.</p>
-                    <div id="lista-promocoes-admin" class="prod-list">
-                        <!-- Lista de promocoes entra aqui -->
-                    </div>
+                    <div id="lista-promocoes-admin" class="prod-list"></div>
                 </div>
             </div>
 
-            <!-- VIEW 5: RELATÓRIOS -->
+            <!-- MUDANÇA: View de Avaliações -->
+            <div id="view-avaliacoes" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
+                
+                <div class="config-section" style="margin-bottom: 25px; border-left: 5px solid var(--color-new);">
+                    <h3>Pendentes de Aprovação</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Avaliações novas que os clientes enviaram. Elas não aparecem no site até você clicar em Aprovar.</p>
+                    <div id="lista-avaliacoes-pendentes" class="prod-list">
+                        <p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação pendente.</p>
+                    </div>
+                </div>
+
+                <div class="config-section" style="border-left: 5px solid var(--color-ready);">
+                    <h3>Aprovadas (Visíveis no site)</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Estas são as avaliações que já estão no seu Mural para todos verem.</p>
+                    <div id="lista-avaliacoes-aprovadas" class="prod-list">
+                        <p style="font-size: 13px; color: var(--text-muted);">Nenhuma avaliação aprovada.</p>
+                    </div>
+                </div>
+
+            </div>
+
             <div id="view-relatorios" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
                 <div class="report-cards">
                     <div class="report-card"><h3>Faturamento Total</h3><p id="res-faturamento">R$ 0,00</p><span>Pedidos concluídos</span></div>
@@ -151,7 +163,6 @@
                 </div>
             </div>
 
-            <!-- VIEW 6: CONFIGURAÇÕES -->
             <div id="view-config" style="display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto;">
                 <div class="config-container">
                     <div class="config-section">
@@ -162,7 +173,10 @@
                     <div class="config-section" style="margin-top: 25px;">
                         <h3>Sistema de Delivery</h3>
                         <div class="toggle-container" style="margin-bottom: 15px;"><span style="font-weight: bold; color: var(--text-dark);">Habilitar Delivery?</span><label class="switch"><input type="checkbox" id="conf-delivery-status" checked><span class="slider round"></span></label></div>
-                        <div class="form-group"><label>Tempo Médio de Entrega</label><input type="text" id="conf-delivery-time" placeholder="Ex: 40-60 min"></div>
+                        <div style="display: flex; gap: 15px;">
+                            <div class="form-group" style="flex: 1;"><label>Taxa de Entrega Fixa (R$)</label><input type="number" id="conf-delivery-fee" placeholder="Ex: 5.00" step="0.01"></div>
+                            <div class="form-group" style="flex: 1;"><label>Tempo de Entrega</label><input type="text" id="conf-delivery-time" placeholder="Ex: 40-60 min"></div>
+                        </div>
                     </div>
                     <div class="config-section" style="margin-top: 25px;">
                         <h3>Informações do Cabeçalho</h3>
@@ -190,91 +204,15 @@
         </div>
     </div>
 
-    <!-- MODAIS CARDÁPIO -->
-    <div class="modal-overlay" id="modal-categoria">
-        <div class="modal-content">
-            <button class="close-modal" onclick="fecharModalCategoria()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-body">
-                <h2 class="modal-title" id="titulo-modal-categoria">Nova Categoria</h2>
-                <input type="hidden" id="cat-id">
-                <div class="form-group"><label>Nome da Categoria</label><input type="text" id="cat-nome" placeholder="Ex: Shakes Premium"></div>
-                <div class="form-group"><label>Descrição (Opcional)</label><input type="text" id="cat-desc" placeholder="Ex: Mais de 20g de proteína..."></div>
-            </div>
-            <div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarCategoria()">Salvar Categoria</button></div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="modal-produto">
-        <div class="modal-content" style="max-height: 90vh;">
-            <button class="close-modal" onclick="fecharModalProduto()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-body">
-                <h2 class="modal-title" id="titulo-modal-produto">Novo Produto</h2>
-                <input type="hidden" id="prod-id"> 
-                <div class="form-group"><label>Categoria</label><select id="prod-categoria"></select></div>
-                <div class="form-group"><label>Nome do Produto</label><input type="text" id="prod-nome" placeholder="Ex: Shake Base"></div>
-                <div class="form-group"><label>Descrição</label><textarea id="prod-desc" rows="2" placeholder="O que vai no prato?"></textarea></div>
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex: 1;"><label>Preço (R$)</label><input type="number" id="prod-preco" placeholder="Ex: 39.90" step="0.01"></div>
-                    <div class="form-group" style="flex: 1;"><label>Texto do Botão</label><input type="text" id="prod-btn" placeholder="Ex: Personalizar" value="Adicionar"></div>
-                </div>
-                <div class="form-group"><label>Tags (Separadas por vírgula)</label><input type="text" id="prod-tags" placeholder="Ex: 36G PROTEÍNA, SEM GLÚTEN"></div>
-                <div class="form-group"><label>Opções Obrigatórias (Sabor, Tamanho...)</label><input type="text" id="prod-opcoes" placeholder="Ex: Frango, Queijo, Mista (Vazio = Normal)"></div>
-                <div class="form-group">
-                    <label>Imagem do Produto</label>
-                    <input type="file" id="prod-img-file" accept="image/*" style="border: none; padding: 0; margin-bottom: 10px; width: 100%;">
-                    <input type="hidden" id="prod-img-url">
-                    <div style="text-align: center; background: #f8f8f8; border-radius: 8px; padding: 10px; border: 1px dashed #ccc;">
-                        <img id="prod-img-preview" src="" style="max-width: 100%; max-height: 120px; object-fit: contain; display: none; border-radius: 8px; margin: 0 auto;">
-                        <span id="prod-img-placeholder" style="font-size: 12px; color: var(--text-muted);">Nenhuma imagem selecionada</span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer"><button class="btn-action btn-finish" id="btn-salvar-produto" onclick="salvarProduto()">Salvar Produto</button></div>
-        </div>
-    </div>
-
-    <!-- MODAL TAXAS -->
-    <div class="modal-overlay" id="modal-taxa">
-        <div class="modal-content">
-            <button class="close-modal" onclick="fecharModalTaxa()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-body">
-                <h2 class="modal-title" id="titulo-modal-taxa">Nova Taxa / Região</h2>
-                <input type="hidden" id="taxa-id">
-                <div class="form-group"><label>Nome do Bairro / Região</label><input type="text" id="taxa-nome" placeholder="Ex: Centro"></div>
-                <div class="form-group"><label>Valor da Taxa (R$)</label><input type="number" id="taxa-valor" placeholder="Ex: 5.00" step="0.01"></div>
-            </div>
-            <div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarTaxa()">Salvar Taxa</button></div>
-        </div>
-    </div>
-
-    <!-- MODAL PROMOÇÕES -->
-    <div class="modal-overlay" id="modal-promocao">
-        <div class="modal-content">
-            <button class="close-modal" onclick="fecharModalPromocao()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-body">
-                <h2 class="modal-title" id="titulo-modal-promocao">Novo Cupom</h2>
-                <input type="hidden" id="promo-id">
-                <div class="form-group"><label>Código do Cupom</label><input type="text" id="promo-codigo" placeholder="Ex: SEXTOU10" style="text-transform: uppercase;"></div>
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>Tipo de Desconto</label>
-                        <select id="promo-tipo">
-                            <option value="porcentagem">Porcentagem (%)</option>
-                            <option value="fixo">Valor Fixo (R$)</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex: 1;"><label>Valor do Desconto</label><input type="number" id="promo-valor" placeholder="Ex: 10" step="0.01"></div>
-                </div>
-                <div class="toggle-container" style="padding: 10px; margin-top: 10px;">
-                    <span style="font-weight: bold; font-size: 13px; color: var(--text-dark);">Cupom Ativo?</span>
-                    <label class="switch"><input type="checkbox" id="promo-ativo" checked><span class="slider round"></span></label>
-                </div>
-            </div>
-            <div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarPromocao()">Salvar Cupom</button></div>
-        </div>
-    </div>
+    <!-- Modais Genéricos (Cardápio, Taxa, Promo) -->
+    <div class="modal-overlay" id="modal-categoria"><div class="modal-content"><button class="close-modal" onclick="fecharModalCategoria()"><i class="fa-solid fa-xmark"></i></button><div class="modal-body"><h2 class="modal-title" id="titulo-modal-categoria">Nova Categoria</h2><input type="hidden" id="cat-id"><div class="form-group"><label>Nome da Categoria</label><input type="text" id="cat-nome"></div><div class="form-group"><label>Descrição (Opcional)</label><input type="text" id="cat-desc"></div></div><div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarCategoria()">Salvar</button></div></div></div>
+    
+    <div class="modal-overlay" id="modal-produto"><div class="modal-content" style="max-height: 90vh;"><button class="close-modal" onclick="fecharModalProduto()"><i class="fa-solid fa-xmark"></i></button><div class="modal-body"><h2 class="modal-title" id="titulo-modal-produto">Novo Produto</h2><input type="hidden" id="prod-id"><div class="form-group"><label>Categoria</label><select id="prod-categoria"></select></div><div class="form-group"><label>Nome</label><input type="text" id="prod-nome"></div><div class="form-group"><label>Descrição</label><textarea id="prod-desc" rows="2"></textarea></div><div style="display: flex; gap: 10px;"><div class="form-group" style="flex: 1;"><label>Preço</label><input type="number" id="prod-preco" step="0.01"></div><div class="form-group" style="flex: 1;"><label>Botão</label><input type="text" id="prod-btn" value="Adicionar"></div></div><div class="form-group"><label>Tags (vírgula)</label><input type="text" id="prod-tags"></div><div class="form-group"><label>Opções Obrigatórias</label><input type="text" id="prod-opcoes" placeholder="Ex: Frango, Queijo (Vazio = Normal)"></div><div class="form-group"><label>Imagem</label><input type="file" id="prod-img-file" accept="image/*" style="width: 100%;"><input type="hidden" id="prod-img-url"><div style="text-align: center; background: #f8f8f8; border-radius: 8px; padding: 10px; margin-top:10px;"><img id="prod-img-preview" src="" style="max-height: 120px; object-fit: contain; display: none; margin: 0 auto;"><span id="prod-img-placeholder" style="font-size: 12px;">Sem imagem</span></div></div></div><div class="modal-footer"><button class="btn-action btn-finish" id="btn-salvar-produto" onclick="salvarProduto()">Salvar</button></div></div></div>
+    
+    <div class="modal-overlay" id="modal-taxa"><div class="modal-content"><button class="close-modal" onclick="fecharModalTaxa()"><i class="fa-solid fa-xmark"></i></button><div class="modal-body"><h2 class="modal-title" id="titulo-modal-taxa">Nova Região</h2><input type="hidden" id="taxa-id"><div class="form-group"><label>Bairro</label><input type="text" id="taxa-nome"></div><div class="form-group"><label>Taxa (R$)</label><input type="number" id="taxa-valor" step="0.01"></div></div><div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarTaxa()">Salvar</button></div></div></div>
+    
+    <div class="modal-overlay" id="modal-promocao"><div class="modal-content"><button class="close-modal" onclick="fecharModalPromocao()"><i class="fa-solid fa-xmark"></i></button><div class="modal-body"><h2 class="modal-title" id="titulo-modal-promocao">Novo Cupom</h2><input type="hidden" id="promo-id"><div class="form-group"><label>Código</label><input type="text" id="promo-codigo" style="text-transform: uppercase;"></div><div style="display: flex; gap: 10px;"><div class="form-group" style="flex: 1;"><label>Tipo</label><select id="promo-tipo"><option value="porcentagem">Porcentagem (%)</option><option value="fixo">Valor Fixo (R$)</option></select></div><div class="form-group" style="flex: 1;"><label>Valor</label><input type="number" id="promo-valor" step="0.01"></div></div><div class="toggle-container" style="padding: 10px; margin-top: 10px;"><span>Ativo?</span><label class="switch"><input type="checkbox" id="promo-ativo" checked><span class="slider round"></span></label></div></div><div class="modal-footer"><button class="btn-action btn-finish" onclick="salvarPromocao()">Salvar</button></div></div></div>
 
     <script type="module" src="js/admin.js"></script>
 </body>
 </html>
-
