@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nutri Life - Nutrição Premium</title>
-    <!-- MUDANÇA: Fontes elegantes (Lora para títulos, Lato para textos) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="css/style.css?v=8">
+    <!-- MUDANÇA: Cache quebrado v=5 -->
+    <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
 
-    <!-- MUDANÇA: TELA DE CARREGAMENTO (SPLASH SCREEN) -->
     <div id="splash-screen" class="splash-screen">
         <div class="splash-content">
             <img src="assets/img/icon.png" alt="Logo Nutri Life" class="splash-logo">
@@ -38,7 +37,8 @@
         <button class="status-close" onclick="fecharStatusWidget()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- MUDANÇA: Removi o .hero-bg verde pesado para deixar o cabeçalho mais "clean" igual a referência -->
+    <!-- AQUI ESTAVA O ERRO! A faixa verde voltou para o seu devido lugar -->
+    <div class="hero-bg"></div>
     
     <section class="info-card">
         <img src="assets/img/icon.png" alt="Logo Nutri Life" class="logo-img-card">
@@ -94,7 +94,6 @@
         <button class="btn-view-cart">Ver pedido</button>
     </div>
 
-    <!-- MODAL DE PRODUTO -->
     <div class="modal-overlay" id="product-modal">
         <div class="modal-content">
             <button class="close-modal" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -116,7 +115,6 @@
         </div>
     </div>
 
-    <!-- MODAL DO CARRINHO -->
     <div class="modal-overlay" id="cart-modal">
         <div class="modal-content" style="height: 90vh;">
             <button class="close-modal" id="close-cart-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -203,7 +201,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE NOVA AVALIAÇÃO -->
     <div class="modal-overlay" id="avaliacao-modal">
         <div class="modal-content" style="max-height: 85vh;">
             <button class="close-modal" onclick="fecharModalAvaliacao()"><i class="fa-solid fa-xmark"></i></button>
@@ -240,15 +237,14 @@
         </div>
     </div>
 
-    <!-- Script com lógica da Splash Screen -->
     <script>
         window.addEventListener('load', function() {
             setTimeout(function() {
                 document.getElementById('splash-screen').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('splash-screen').style.display = 'none';
-                }, 500); // Tempo do fade out
-            }, 1800); // Tempo que a tela fica visível girando
+                }, 500);
+            }, 1800); 
         });
     </script>
     <script type="module" src="js/app.js?v=9"></script>
