@@ -27,6 +27,7 @@ let lojaAberta = true;
 let configDelivery = { habilitado: false };
 let taxasDisponiveis = []; let promocoesDisponiveis = []; let cupomAtivo = null; 
 let lojaTelefone = ''; let chavePixLoja = ''; 
+let configLojaDados = null; // Guarda os dados para o relógio ler
 
 let unsubscribePedido = null;
 window.fecharStatusWidget = function() { document.getElementById('order-status-widget').style.display = 'none'; }
@@ -38,7 +39,7 @@ function escutarStatusPedido(idPedido) {
             const widget = document.getElementById('order-status-widget'); const icon = document.getElementById('order-status-icon'); const text = document.getElementById('order-status-text');
             widget.style.display = 'flex';
             if (pedido.status === 'novo') { widget.style.borderLeftColor = 'var(--color-new)'; icon.innerHTML = '🕒'; text.innerText = 'Recebido (Aguardando)'; } 
-            else if (pedido.status === 'preparo') { widget.style.borderLeftColor = 'var(--color-prep)'; icon.innerHTML = '🍴'; text.innerText = 'Em Preparo na Cozinha'; } 
+            else if (pedido.status === 'preparo') { widget.style.borderLeftColor = 'var(--color-prep)'; icon.innerHTML = '🍳'; text.innerText = 'Em Preparo na Cozinha'; } 
             else if (pedido.status === 'pronto') { widget.style.borderLeftColor = 'var(--color-ready)'; icon.innerHTML = pedido.tipo_entrega === 'Delivery' ? '🛵' : '🛍️'; text.innerText = pedido.tipo_entrega === 'Delivery' ? 'Saiu para Entrega!' : 'Pronto para Retirada!'; } 
             else if (pedido.status === 'arquivado') { widget.style.borderLeftColor = 'var(--text-muted)'; icon.innerHTML = '✅'; text.innerText = 'Pedido Finalizado!'; setTimeout(() => { widget.style.display = 'none'; localStorage.removeItem('meuPedidoNutriLife'); }, 5000); }
         }
@@ -48,21 +49,101 @@ function escutarStatusPedido(idPedido) {
 const pedidoAtivoId = localStorage.getItem('meuPedidoNutriLife');
 if (pedidoAtivoId) escutarStatusPedido(pedidoAtivoId);
 
+// ==========================================
+// MUDANÇA: INTELIGÊNCIA DE HORÁRIOS
+// ==========================================
+function checarHorarioAutomatizado() {
+    if (!configLojaDados) return;
+
+    // Se a chave geral foi desligada no painel, fecha imediatamente (Botão de Emergência)
+    if (configLojaDados.status_loja === false) {
+        lojaAberta = false;
+        atualizarVisualLoja(false);
+        return;
+    }
+
+    const agora = new Date();
+    const diaSemana = agora.getDay(); // 0: Dom, 1-5: Seg-Sex, 6: Sab
+    const minutosAtual = agora.getHours() * 60 + agora.getMinutes();
+
+    let stringDoDia = "";
+    if (diaSemana === 0) stringDoDia = configLojaDados.hr_domingo || "";
+    else if (diaSemana === 6) stringDoDia = configLojaDados.hr_sabado || "";
+    else stringDoDia = configLojaDados.hr_semana || "";
+
+    // Se estiver escrito "Fechado" no campo do dia, fecha
+    if (!stringDoDia || stringDoDia.toLowerCase().includes('fechado')) {
+        lojaAberta = false;
+        atualizarVisualLoja(false);
+        return;
+    }
+
+    // Procura por números no formato HH:MM (ex: 08:00 às 20:00)
+    const horasEncontradas = stringDoDia.match(/(\d{1,2}):(\d{2})/g);
+    
+    if (horasEncontradas && horasEncontradas.length >= 2) {
+        const [hAbre, mAbre] = horasEncontradas[0].split(':').map(Number);
+        const [hFecha, mFecha] = horasEncontradas[1].split(':').map(Number);
+        
+        const minutosAbre = hAbre * 60 + mAbre;
+        const minutosFecha = hFecha * 60 + mFecha;
+
+        // Regra para lojas que abrem de dia e fecham de madrugada (ex: 18:00 às 02:00)
+        if (minutosFecha <= minutosAbre) {
+            lojaAberta = (minutosAtual >= minutosAbre || minutosAtual <= minutosFecha);
+        } else {
+            // Regra normal (ex: 08:00 às 20:00)
+            lojaAberta = (minutosAtual >= minutosAbre && minutosAtual < minutosFecha);
+        }
+    } else {
+        // Se escreveu algo sem horário legível (ex: "Aberto 24h"), deixa aberto
+        lojaAberta = true;
+    }
+
+    atualizarVisualLoja(lojaAberta);
+}
+
+function atualizarVisualLoja(estaAberta) {
+    const bannerFechado = document.getElementById('loja-fechada-banner');
+    const btnViewCart = document.querySelector('.btn-view-cart');
+    if (!estaAberta) { 
+        bannerFechado.style.display = 'block'; 
+        btnViewCart.style.backgroundColor = '#ccc';
+        btnViewCart.innerText = 'Loja Fechada';
+    } else { 
+        bannerFechado.style.display = 'none';
+        atualizarBarraCarrinho(); // Retorna o visual original do carrinho
+    }
+}
+
+// O relógio verifica os horários a cada 1 minuto (60000 ms)
+setInterval(checarHorarioAutomatizado, 60000);
+// ==========================================
+
 onSnapshot(doc(db, "loja", "configuracoes"), (docSnap) => {
     if (docSnap.exists()) {
-        const config = docSnap.data();
-        lojaAberta = config.status_loja !== false; configDelivery.habilitado = (config.delivery_status === true); configDelivery.taxa = parseFloat(config.delivery_fee) || 0;
-        chavePixLoja = config.chave_pix || ""; document.getElementById('chave-pix-texto').innerText = chavePixLoja;
+        configLojaDados = docSnap.data(); // Guarda para o relógio
+        configDelivery.habilitado = (configLojaDados.delivery_status === true); 
+        configDelivery.taxa = parseFloat(configLojaDados.delivery_fee) || 0;
+        
+        chavePixLoja = configLojaDados.chave_pix || ""; document.getElementById('chave-pix-texto').innerText = chavePixLoja;
         const optDelivery = document.getElementById('opt-delivery'); const deliveryInfoText = document.getElementById('store-delivery-info');
-        if (configDelivery.habilitado) { optDelivery.style.display = 'block'; let tempoStr = config.delivery_time ? config.delivery_time : "Disponível"; deliveryInfoText.innerHTML = `${tempoStr} <span style="font-size:10px; display:block; color:var(--primary-green)">A partir do bairro</span>`; } 
+        
+        if (configDelivery.habilitado) { optDelivery.style.display = 'block'; let tempoStr = configLojaDados.delivery_time ? configLojaDados.delivery_time : "Disponível"; deliveryInfoText.innerHTML = `${tempoStr} <span style="font-size:10px; display:block; color:var(--primary-green)">A partir do bairro</span>`; } 
         else { optDelivery.style.display = 'none'; document.getElementById('tipo-entrega').value = 'Retirada'; verificarRegrasCheckout(); deliveryInfoText.innerText = "Indisponível"; }
-        if(config.nome_loja) document.getElementById('store-brand-title').innerText = config.nome_loja; if(config.frase_efeito) document.getElementById('store-quote').innerText = `"${config.frase_efeito}"`; if(config.endereco) document.getElementById('store-address').innerText = config.endereco;
+        
+        if(configLojaDados.nome_loja) document.getElementById('store-brand-title').innerText = configLojaDados.nome_loja; if(configLojaDados.frase_efeito) document.getElementById('store-quote').innerText = `"${configLojaDados.frase_efeito}"`; if(configLojaDados.endereco) document.getElementById('store-address').innerText = configLojaDados.endereco;
+        
         const linkZap = document.getElementById('link-whatsapp');
-        if(config.telefone && config.telefone.trim() !== '') { lojaTelefone = config.telefone.replace(/\D/g,''); linkZap.href = `https://wa.me/55${lojaTelefone}`; linkZap.style.display = 'flex'; } else { lojaTelefone = ''; linkZap.style.display = 'none'; }
-        const linkInsta = document.getElementById('link-instagram'); if(config.instagram && config.instagram.trim() !== '') { linkInsta.href = config.instagram; linkInsta.style.display = 'flex'; } else { linkInsta.style.display = 'none'; }
-        const linkFace = document.getElementById('link-facebook'); if(config.facebook && config.facebook.trim() !== '') { linkFace.href = config.facebook; linkFace.style.display = 'flex'; } else { linkFace.style.display = 'none'; }
-        if(config.hr_semana) document.getElementById('hours-weekday').innerText = config.hr_semana; if(config.hr_sabado) document.getElementById('hours-saturday').innerText = config.hr_sabado; if(config.hr_domingo) document.getElementById('hours-sunday').innerText = config.hr_domingo;
-        const bannerFechado = document.getElementById('loja-fechada-banner'); if (!lojaAberta) { bannerFechado.style.display = 'block'; } else { bannerFechado.style.display = 'none'; }
+        if(configLojaDados.telefone && configLojaDados.telefone.trim() !== '') { lojaTelefone = configLojaDados.telefone.replace(/\D/g,''); linkZap.href = `https://wa.me/55${lojaTelefone}`; linkZap.style.display = 'flex'; } else { lojaTelefone = ''; linkZap.style.display = 'none'; }
+        
+        const linkInsta = document.getElementById('link-instagram'); if(configLojaDados.instagram && configLojaDados.instagram.trim() !== '') { linkInsta.href = configLojaDados.instagram; linkInsta.style.display = 'flex'; } else { linkInsta.style.display = 'none'; }
+        const linkFace = document.getElementById('link-facebook'); if(configLojaDados.facebook && configLojaDados.facebook.trim() !== '') { linkFace.href = configLojaDados.facebook; linkFace.style.display = 'flex'; } else { linkFace.style.display = 'none'; }
+        
+        if(configLojaDados.hr_semana) document.getElementById('hours-weekday').innerText = configLojaDados.hr_semana; if(configLojaDados.hr_sabado) document.getElementById('hours-saturday').innerText = configLojaDados.hr_sabado; if(configLojaDados.hr_domingo) document.getElementById('hours-sunday').innerText = configLojaDados.hr_domingo;
+        
+        // Roda a checagem pela primeira vez
+        checarHorarioAutomatizado();
     }
 });
 
@@ -159,6 +240,8 @@ let carrinho = []; let produtoAtual = null; let quantidadeAtual = 1;
 const modalProduto = document.getElementById('product-modal'); const btnCloseModalProduto = document.getElementById('close-modal'); const textoQuantidade = document.querySelector('.qty-number'); const textoTotalModal = document.getElementById('modal-total'); const campoObservacao = document.querySelector('.modal-options textarea');
 
 window.abrirModal = function(idProduto) {
+    if (!lojaAberta) return mostrarAlerta("Nossa loja está fechada no momento. Volte mais tarde!"); // Impede adicionar itens se fechado
+    
     const produto = produtosDb.find(p => p.id === idProduto); if (!produto) return;
     produtoAtual = { ...produto }; quantidadeAtual = 1; document.getElementById('modal-title').innerText = produto.nome; document.getElementById('modal-desc').innerText = produto.desc; document.getElementById('modal-price').innerText = formatarMoeda(produto.preco);
     const imgModal = document.getElementById('modal-img'); if(produto.imagem && produto.imagem !== '') { imgModal.src = produto.imagem; } else { imgModal.src = 'assets/img/icon.png'; }
@@ -188,7 +271,16 @@ document.querySelector('.btn-add-to-cart').addEventListener('click', () => {
 
 function atualizarBarraCarrinho() {
     const totalItens = carrinho.reduce((soma, item) => soma + item.quantidade, 0); const valorTotal = carrinho.reduce((soma, item) => soma + item.total, 0);
-    document.querySelector('.cart-items-count').innerText = totalItens === 1 ? '1 item' : `${totalItens} itens`; document.querySelector('.cart-total').innerText = formatarMoeda(valorTotal); document.querySelector('.btn-view-cart').style.backgroundColor = totalItens > 0 ? 'var(--primary-green)' : 'var(--text-dark)';
+    document.querySelector('.cart-items-count').innerText = totalItens === 1 ? '1 item' : `${totalItens} itens`; document.querySelector('.cart-total').innerText = formatarMoeda(valorTotal); 
+    
+    // Mantém a cor visual do carrinho de acordo com status aberto/fechado
+    const btnCart = document.querySelector('.btn-view-cart');
+    if (!lojaAberta) {
+        btnCart.style.backgroundColor = '#ccc'; btnCart.innerText = 'Loja Fechada';
+    } else {
+        btnCart.style.backgroundColor = totalItens > 0 ? 'var(--primary-green)' : 'var(--text-dark)';
+        btnCart.innerText = 'Ver pedido';
+    }
 }
 
 window.scrollToCategory = function(idCategoria, elementoBotao) {
@@ -217,6 +309,7 @@ window.toggleEndereco = window.verificarRegrasCheckout;
 window.copiarPix = function() { navigator.clipboard.writeText(chavePixLoja).then(() => { mostrarAlerta("Chave PIX copiada para a área de transferência!"); }); }
 
 document.querySelector('.btn-view-cart').addEventListener('click', () => {
+    if (!lojaAberta) return mostrarAlerta("Nossa loja está fechada no momento. Volte mais tarde!");
     if (carrinho.length === 0) return mostrarAlerta("Seu carrinho está vazio!");
     verificarRegrasCheckout(); renderizarItensCarrinho(); document.body.style.overflow = 'hidden'; cartModal.classList.add('active');
 });
@@ -272,8 +365,7 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
     const totalFinalCalculado = (valorTotalItens - descontoCobrado) + taxaCobrada;
 
     const pedidoFinal = { 
-        cliente: nome, pagamento: pagamentoTexto, tipo_entrega: tipoEntrega, endereco_entrega: enderecoFinal, taxa_entrega: taxaCobrada, cupom_aplicado: cupomNome, valor_desconto: descontoCobrado, itens: carrinho, total_pedido: totalFinalCalculado, data_hora: new Date().toISOString(), status: "novo",
-        pago: false // MUDANÇA: Todo pedido nasce como NÃO PAGO
+        cliente: nome, pagamento: pagamentoTexto, tipo_entrega: tipoEntrega, endereco_entrega: enderecoFinal, taxa_entrega: taxaCobrada, cupom_aplicado: cupomNome, valor_desconto: descontoCobrado, itens: carrinho, total_pedido: totalFinalCalculado, data_hora: new Date().toISOString(), status: "novo", pago: false 
     };
 
     const btnFinalizar = document.getElementById('btn-finalizar-pedido'); const textoOriginal = btnFinalizar.innerText; btnFinalizar.innerText = "Processando..."; btnFinalizar.disabled = true;
@@ -281,7 +373,7 @@ document.getElementById('btn-finalizar-pedido').addEventListener('click', async 
     try {
         const docRef = await addDoc(collection(db, "pedidos"), pedidoFinal); localStorage.setItem('meuPedidoNutriLife', docRef.id); escutarStatusPedido(docRef.id);
 
-        let textoWhats = `*NOVO PEDIDO!* \n*Cliente:* ${nome}\n*Pedido:* ${tipoEntrega}\n`;
+        let textoWhats = `*NOVO PEDIDO!* 🍔\n*Cliente:* ${nome}\n*Entrega:* ${tipoEntrega}\n`;
         if (tipoEntrega === 'Delivery' || tipoEntrega === 'Mesa') textoWhats += `*Local:* ${enderecoFinal}\n`;
         textoWhats += `\n*RESUMO:*\n`;
         carrinho.forEach(item => { textoWhats += `${item.quantidade}x ${item.nome} - ${formatarMoeda(item.total)}\n`; if(item.observacao) textoWhats += `   _Obs: ${item.observacao}_\n`; });
