@@ -4,16 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nutri Life - Nutrição Premium</title>
-    <!-- MUDANÇA: Importando a Fonte Poppins do Google -->
+    <!-- MUDANÇA: Fontes elegantes (Lora para títulos, Lato para textos) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- MUDANÇA: Quebrando cache do CSS -->
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
+
+    <!-- MUDANÇA: TELA DE CARREGAMENTO (SPLASH SCREEN) -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <img src="assets/img/icon.png" alt="Logo Nutri Life" class="splash-logo">
+            <h1 class="splash-title">Nutri Life</h1>
+            <p class="splash-subtitle">NUTRIÇÃO PREMIUM</p>
+            <div class="splash-spinner"></div>
+            <p class="splash-text">Abrindo o cardápio...</p>
+        </div>
+    </div>
     
     <div id="loja-fechada-banner" class="loja-fechada-banner" style="display: none;">
         <i class="fa-solid fa-triangle-exclamation"></i> LOJA FECHADA NO MOMENTO <i class="fa-solid fa-triangle-exclamation"></i>
@@ -28,8 +38,8 @@
         <button class="status-close" onclick="fecharStatusWidget()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <div class="hero-bg"></div>
-
+    <!-- MUDANÇA: Removi o .hero-bg verde pesado para deixar o cabeçalho mais "clean" igual a referência -->
+    
     <section class="info-card">
         <img src="assets/img/icon.png" alt="Logo Nutri Life" class="logo-img-card">
         
@@ -84,6 +94,7 @@
         <button class="btn-view-cart">Ver pedido</button>
     </div>
 
+    <!-- MODAL DE PRODUTO -->
     <div class="modal-overlay" id="product-modal">
         <div class="modal-content">
             <button class="close-modal" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -105,6 +116,7 @@
         </div>
     </div>
 
+    <!-- MODAL DO CARRINHO -->
     <div class="modal-overlay" id="cart-modal">
         <div class="modal-content" style="height: 90vh;">
             <button class="close-modal" id="close-cart-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -164,7 +176,6 @@
                         <button onclick="copiarPix()" style="background: var(--primary-green); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-size: 12px; cursor: pointer; margin-bottom: 10px;"><i class="fa-regular fa-copy"></i> Copiar Chave</button>
                         <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">*Você deverá enviar o comprovante no WhatsApp ao confirmar o pedido.</p>
                     </div>
-
                 </div>
             </div>
             <div class="modal-footer" style="flex-direction: column; align-items: stretch; gap: 10px;">
@@ -181,6 +192,7 @@
         </div>
     </div>
 
+    <!-- MODAL WHATSAPP -->
     <div class="modal-overlay" id="whatsapp-modal" style="align-items: center; z-index: 2000;">
         <div class="custom-alert-box" style="max-width: 350px;">
             <div style="font-size: 45px; color: #25D366; margin-bottom: 10px;"><i class="fa-brands fa-whatsapp"></i></div>
@@ -191,6 +203,7 @@
         </div>
     </div>
 
+    <!-- MODAL DE NOVA AVALIAÇÃO -->
     <div class="modal-overlay" id="avaliacao-modal">
         <div class="modal-content" style="max-height: 85vh;">
             <button class="close-modal" onclick="fecharModalAvaliacao()"><i class="fa-solid fa-xmark"></i></button>
@@ -227,7 +240,17 @@
         </div>
     </div>
 
-    <!-- MUDANÇA: Truque do Cache (v=9) no app.js para garantir -->
+    <!-- Script com lógica da Splash Screen -->
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('splash-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash-screen').style.display = 'none';
+                }, 500); // Tempo do fade out
+            }, 1800); // Tempo que a tela fica visível girando
+        });
+    </script>
     <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>
