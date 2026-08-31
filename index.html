@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nutri Life - Nutrição Premium</title>
+    <!-- MUDANÇA: Importando a Fonte Poppins do Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- MUDANÇA: Quebrando cache do CSS -->
+    <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
     
@@ -78,7 +84,6 @@
         <button class="btn-view-cart">Ver pedido</button>
     </div>
 
-    <!-- MODAL DE PRODUTO -->
     <div class="modal-overlay" id="product-modal">
         <div class="modal-content">
             <button class="close-modal" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -100,7 +105,6 @@
         </div>
     </div>
 
-    <!-- MODAL DO CARRINHO -->
     <div class="modal-overlay" id="cart-modal">
         <div class="modal-content" style="height: 90vh;">
             <button class="close-modal" id="close-cart-modal"><i class="fa-solid fa-xmark"></i></button>
@@ -122,7 +126,6 @@
                     <input type="text" id="cliente-nome" placeholder="Digite seu nome" required class="checkout-input">
                     
                     <h3 style="font-size: 16px; margin: 20px 0 15px; color: var(--text-dark);">Como deseja receber?</h3>
-                    <!-- MUDANÇA: Adicionado "Consumo no Local" -->
                     <select id="tipo-entrega" class="checkout-input" onchange="verificarRegrasCheckout()">
                         <option value="Retirada">Retirar na Loja</option>
                         <option value="Delivery" id="opt-delivery" style="display:none;">Entrega (Delivery)</option>
@@ -141,7 +144,6 @@
                         <input type="text" id="end-comp" placeholder="Complemento (Opcional)" class="checkout-input">
                     </div>
 
-                    <!-- MUDANÇA: Caixinha para o número da mesa -->
                     <div id="box-mesa" style="display: none; margin-top: 15px; padding: 15px; background: #E8F5E9; border-radius: 8px; border: 1px solid #4CAF50;">
                         <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--primary-green);">Qual o número da sua mesa?</h4>
                         <input type="number" id="num-mesa" placeholder="Ex: 05" class="checkout-input" style="border-color: #4CAF50;">
@@ -225,6 +227,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/app.js?v=7"></script>
+    <!-- MUDANÇA: Truque do Cache (v=9) no app.js para garantir -->
+    <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>
